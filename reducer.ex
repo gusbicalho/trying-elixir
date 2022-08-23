@@ -19,6 +19,7 @@ defmodule KV do
     send(caller, Map.get(map, key))
     map
   end
+
   defp handle(map, {:put, key, value}) do
     Map.put(map, key, value)
   end

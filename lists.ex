@@ -1,22 +1,22 @@
 defmodule DLists do
   def empty do
-    fn (tail) -> tail end
+    fn tail -> tail end
   end
 
   def cons(x, dlist) do
-    fn (tail) ->
+    fn tail ->
       [x | dlist.(tail)]
     end
   end
 
   def snoc(dlist, x) do
-    fn (tail) ->
+    fn tail ->
       dlist.([x | tail])
     end
   end
 
   def append(dlist1, dlist2) do
-    fn (tail) ->
+    fn tail ->
       dlist1.(dlist2.(tail))
     end
   end
@@ -26,7 +26,7 @@ defmodule DLists do
   end
 
   def from_list(list) do
-    fn (tail) ->
+    fn tail ->
       list ++ tail
     end
   end
@@ -34,7 +34,7 @@ end
 
 defmodule Lists do
   defp flip(f) do
-    fn(a, b) -> f.(b, a) end
+    fn a, b -> f.(b, a) end
   end
 
   def cons(x, xs) do
@@ -60,7 +60,7 @@ defmodule Lists do
   end
 
   def unfoldl(f, seed) do
-    unfoldl(f, seed, DLists.empty)
+    unfoldl(f, seed, DLists.empty())
   end
 
   defp unfoldl(f, seed, dlist) do
@@ -71,6 +71,6 @@ defmodule Lists do
   end
 
   def map(f, elems) do
-    foldr(fn(e, tail) -> [f.(e) | tail] end, [], elems)
+    foldr(fn e, tail -> [f.(e) | tail] end, [], elems)
   end
 end
