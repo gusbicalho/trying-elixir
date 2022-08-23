@@ -24,6 +24,12 @@ defmodule DLists do
   def to_list(dlist) do
     dlist.([])
   end
+
+  def from_list(list) do
+    fn (tail) ->
+      list ++ tail
+    end
+  end
 end
 
 defmodule Lists do
@@ -53,14 +59,18 @@ defmodule Lists do
     foldl(flip(&cons/2), [], elems)
   end
 
-  def unfold(f, seed) do
-    unfold(f, seed, DLists.empty)
+  def unfoldl(f, seed) do
+    unfoldl(f, seed, DLists.empty)
   end
 
-  defp unfold(f, seed, dlist) do
+  defp unfoldl(f, seed, dlist) do
     case f.(seed) do
       nil -> DLists.to_list(dlist)
-      {elem, seed} -> unfold(f, seed, DLists.snoc(dlist, elem))
+      {elem, seed} -> unfoldl(f, seed, DLists.snoc(dlist, elem))
     end
+  end
+
+  def map(f, elems) do
+    foldr(fn(e, tail) -> [f.(e) | tail] end, [], elems)
   end
 end
