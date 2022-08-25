@@ -9,6 +9,18 @@ defmodule TodoList do
     )
   end
 
+  def from_file!(path) do
+    CsvParser.parse_file!(path, {
+      &CsvParser.Parsers.date_slashes/1,
+      &CsvParser.Parsers.trim/1
+    })
+    |> Enum.flat_map(fn
+      {:ok, {date, title}} -> [%{date: date, title: title},]
+      {:error, error} -> raise error
+    end)
+    |> new()
+  end
+
   def add_entry(%TodoList{} = todo_list, %{date: _} = entry) do
     entry = Map.put(entry, :id, todo_list.auto_id)
 
@@ -48,11 +60,12 @@ end
 defmodule SimpleTodo do
   def run do
     todos =
-      TodoList.new([
-        %{date: ~D[2018-12-19], title: "Dentist"},
-        %{date: ~D[2018-12-20], title: "Shopping"},
-        %{date: ~D[2018-12-19], title: "Movies"}
-      ])
+      # TodoList.new([
+      #   %{date: ~D[2018-12-19], title: "Dentist"},
+      #   %{date: ~D[2018-12-20], title: "Shopping"},
+      #   %{date: ~D[2018-12-19], title: "Movies"}
+      # ])
+      TodoList.from_file!("todos_sample.txt")
       |> IO.inspect()
 
     TodoList.entries(todos, ~D[2018-12-19])

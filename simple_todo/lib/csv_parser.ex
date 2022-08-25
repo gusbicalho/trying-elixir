@@ -40,7 +40,6 @@ defmodule CsvParser do
              end
            )
            |> Enum.to_list()
-           |> IO.inspect()
            |> traverse_ok,
          parsed = List.to_tuple(list_parsed),
          :ok <- expect_tuple_size(parsed, count_cols) do
@@ -85,6 +84,48 @@ defmodule CsvParser.Parsers do
       {i, ""} -> {:ok, i}
       {_i, leftovers} -> {:error, "Unexpected: #{leftovers}"}
       :error -> {:error, "Not an integer: #{string}"}
+    end
+  end
+
+  def date_iso(string) do
+    with {:ok, {year, month, day}} <- Calendar.ISO.parse_date(string) do
+      Date.new(year, month, day)
+    end
+  end
+
+  def date_slashes(string) do
+    with {year, string} <- Integer.parse(string),
+         {:ok, {_, string}} <- expect_prefix(string, "/"),
+         {month, string} <- Integer.parse(string),
+         {:ok, {_, string}} <- expect_prefix(string, "/"),
+         {day, string} <- Integer.parse(string),
+         {:ok, _} <- expect_end(string) do
+      Date.new(year, month, day)
+    end
+  end
+
+  defp expect_prefix(string, prefix) do
+    string_size = byte_size(string)
+    prefix_size = byte_size(prefix)
+
+    if prefix_size > string_size do
+      {:error, "Expected #{prefix}, got #{string}"}
+    else
+      string_prefix = binary_part(string, 0, prefix_size)
+
+      if string_prefix == prefix do
+        {:ok, {prefix, binary_part(string, prefix_size, string_size - prefix_size)}}
+      else
+        {:error, "Expected #{prefix}, got #{string_prefix}"}
+      end
+    end
+  end
+
+  defp expect_end(string) do
+    if string == "" do
+      {:ok, {}}
+    else
+      {:error, "Unexpected #{string}"}
     end
   end
 end
