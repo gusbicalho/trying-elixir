@@ -19,5 +19,7 @@ defmodule LambdaCalculus do
       )
 
     IO.inspect(decl)
+
+    nil
   end
 end

@@ -1,10 +1,11 @@
 defmodule LambdaCalculus.Pipeline.Parser do
   alias Parsers, as: P
+  alias LambdaCalculus.Pipeline.ParseTree, as: PTree
 
   def stmt_parser do
     P.alternatives([
-      decl_parser() |> P.map(&{:decl, &1}),
-      expr_parser() |> P.map(&{:expr, &1})
+      decl_parser() |> P.map(&PTree.Statement.declaration/1),
+      expr_parser() |> P.map(&PTree.Statement.expression/1)
     ])
   end
 
@@ -17,7 +18,7 @@ defmodule LambdaCalculus.Pipeline.Parser do
     |> P.also(P.Delimiter.whitespace())
     |> P.paired_with(expr_parser())
     |> P.map(fn {identifier, definition} ->
-      %{identifier: identifier, definition: definition}
+      PTree.Declaration.new(identifier, definition)
     end)
   end
 
@@ -42,7 +43,7 @@ defmodule LambdaCalculus.Pipeline.Parser do
     |> P.also(P.Delimiter.whitespace())
     |> P.paired_with(expr_parser())
     |> P.map(fn {param_id, body_expr} ->
-      {:lambda, %{param: param_id, body: body_expr}}
+      PTree.Lambda.new_expr(param_id, body_expr)
     end)
   end
 
@@ -61,7 +62,7 @@ defmodule LambdaCalculus.Pipeline.Parser do
         app_args,
         app_head,
         fn head, arg ->
-          {:apply, %{function: head, argument: arg}}
+          PTree.Application.new_expr(head, arg)
         end
       )
     end)
@@ -70,8 +71,8 @@ defmodule LambdaCalculus.Pipeline.Parser do
   def application_sequence_item do
     P.alternatives([
       parens(expr_parser()),
-      identifier_parser() |> P.map(&%{lookup: &1}),
-      Parsers.Numbers.integer() |> P.map(&%{literal: &1})
+      identifier_parser() |> P.map(&PTree.Lookup.new_expr/1),
+      Parsers.Numbers.integer() |> P.map(&PTree.Literal.new_expr/1)
     ])
     |> P.also(P.Delimiter.whitespace())
   end
