@@ -1,6 +1,42 @@
 defmodule LambdaCalculus.Pipeline.ParseTree do
+  alias Parsers, as: P
+
+  defmodule Expression.Meta do
+    defstruct [:position_span]
+
+    def new(meta \\ []) do
+      position_span = meta[:position_span]
+      if position_span, do: %P.Position.Span{} = position_span
+      %__MODULE__{position_span: position_span}
+    end
+  end
+
   defmodule Expression do
-    defstruct [:expression]
+    defstruct [:expression, meta: Expression.Meta.new()]
+  end
+
+  defmodule Identifier.Meta do
+    defstruct [:position_span]
+
+    def new(meta \\ []) do
+      position_span = meta[:position_span]
+      if position_span, do: %P.Position.Span{} = position_span
+      %__MODULE__{position_span: position_span}
+    end
+  end
+
+  defmodule Identifier do
+    defstruct [:name, meta: %Identifier.Meta{}]
+
+    def new(name, meta \\ %Identifier.Meta{})
+
+    def new(name, %Identifier.Meta{} = meta) when is_binary(name) do
+      %__MODULE__{name: String.to_atom(name), meta: meta}
+    end
+
+    def new(name, %Identifier.Meta{} = meta) when is_atom(name) do
+      %__MODULE__{name: name, meta: meta}
+    end
   end
 
   defmodule Lambda do
@@ -10,7 +46,7 @@ defmodule LambdaCalculus.Pipeline.ParseTree do
       as_expr(new(parameter, body))
     end
 
-    def new(parameter, %Expression{} = body) when is_binary(parameter) do
+    def new(%Identifier{} = parameter, %Expression{} = body) do
       %__MODULE__{parameter: parameter, body: body}
     end
 
@@ -22,55 +58,64 @@ defmodule LambdaCalculus.Pipeline.ParseTree do
   defmodule Application do
     defstruct [:function, :argument]
 
-    def new_expr(function, argument) do
-      as_expr(new(function, argument))
+    def new_expr(function, argument, meta \\ []) do
+      as_expr(new(function, argument), meta)
     end
 
     def new(%Expression{} = function, %Expression{} = argument) do
       %__MODULE__{function: function, argument: argument}
     end
 
-    def as_expr(%__MODULE__{} = application) do
-      %Expression{expression: application}
+    def as_expr(%__MODULE__{} = application, meta \\ []) do
+      %Expression{
+        expression: application,
+        meta: Expression.Meta.new(meta)
+      }
     end
   end
 
   defmodule Lookup do
     defstruct [:lookup]
 
-    def new_expr(identifier) do
-      as_expr(new(identifier))
+    def new_expr(identifier, meta \\ []) do
+      as_expr(new(identifier), meta)
     end
 
-    def new(identifier) when is_binary(identifier) do
+    def new(%Identifier{} = identifier) do
       %__MODULE__{lookup: identifier}
     end
 
-    def as_expr(%__MODULE__{} = lookup) do
-      %Expression{expression: lookup}
+    def as_expr(%__MODULE__{} = lookup, meta \\ []) do
+      %Expression{
+        expression: lookup,
+        meta: Expression.Meta.new(meta)
+      }
     end
   end
 
   defmodule Literal do
     defstruct [:literal]
 
-    def new_expr(identifier) do
-      as_expr(new(identifier))
+    def new_expr(identifier, meta \\ []) do
+      as_expr(new(identifier), meta)
     end
 
     def new(literal) do
       %__MODULE__{literal: literal}
     end
 
-    def as_expr(%__MODULE__{} = literal) do
-      %Expression{expression: literal}
+    def as_expr(%__MODULE__{} = literal, meta \\ []) do
+      %Expression{
+        expression: literal,
+        meta: Expression.Meta.new(meta)
+      }
     end
   end
 
   defmodule Declaration do
     defstruct [:name, :definition]
 
-    def new(name, %Expression{} = definition) when is_binary(name) do
+    def new(%Identifier{} = name, %Expression{} = definition) do
       %__MODULE__{name: name, definition: definition}
     end
   end

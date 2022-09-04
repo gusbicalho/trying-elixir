@@ -33,6 +33,15 @@ defmodule Parsers do
 
   # adapters
 
+  def with_span(parser) do
+    fn %State{} = state ->
+      with {new_state, {:ok, result}} <- parser.(state) do
+        {new_state,
+         {:ok, {result, Parsers.Position.Span.new(state.position, new_state.position)}}}
+      end
+    end
+  end
+
   def map(parser, f) do
     fn state ->
       with {state, {:ok, r}} <- parser.(state) do

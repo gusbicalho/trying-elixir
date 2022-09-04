@@ -1,11 +1,5 @@
 defmodule Parsers.Internals do
-  defmodule Position do
-    defstruct [:line, :column]
-
-    def new(line, column) do
-      %__MODULE__{line: line, column: column}
-    end
-  end
+  alias Parsers.Position
 
   defmodule State do
     defstruct [:leftovers, :consumed_so_far, :position]
