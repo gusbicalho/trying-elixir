@@ -3,8 +3,14 @@ defmodule LambdaCalculus do
 
   """
 
-  def test_stmt(s) do
-    {stmt, ""} = Parsers.run!(LambdaCalculus.Pipeline.Parser.stmt_parser(), s)
+  def test_stmt(s, source_name \\ nil) do
+    {stmt, ""} =
+      Parsers.run!(
+        LambdaCalculus.Pipeline.Parser.stmt_parser(),
+        s,
+        source_name: source_name
+      )
+
     stmt
   end
 
@@ -16,7 +22,7 @@ defmodule LambdaCalculus do
 
     "let id = \\a -> a              "
     |> IO.inspect()
-    |> test_stmt()
+    |> test_stmt("second.lam")
     |> IO.inspect()
 
     nil

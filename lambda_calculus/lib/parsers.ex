@@ -7,13 +7,13 @@ defmodule Parsers do
 
   alias Parsers.Internals.State
 
-  def run(parser, text) do
-    {state, result} = parser.(State.new(text))
+  def run(parser, text, opts \\ []) do
+    {state, result} = parser.(State.new(text, opts))
     {result, state.leftovers}
   end
 
-  def run!(parser, text) do
-    {{:ok, result}, leftovers} = run(parser, text)
+  def run!(parser, text, opts \\ []) do
+    {{:ok, result}, leftovers} = run(parser, text, opts)
     {result, leftovers}
   end
 
@@ -37,7 +37,13 @@ defmodule Parsers do
     fn %State{} = state ->
       with {new_state, {:ok, result}} <- parser.(state) do
         {new_state,
-         {:ok, {result, Parsers.Position.Span.new(state.position, new_state.position)}}}
+         {:ok,
+          {result,
+           Parsers.Position.Span.new(
+             state.position,
+             new_state.position,
+             state.source_name
+           )}}}
       end
     end
   end

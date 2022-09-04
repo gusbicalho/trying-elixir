@@ -2,13 +2,14 @@ defmodule Parsers.Internals do
   alias Parsers.Position
 
   defmodule State do
-    defstruct [:leftovers, :consumed_so_far, :position]
+    defstruct [:leftovers, :consumed_so_far, :position, :source_name]
 
-    def new(text) do
+    def new(text, opts \\ []) do
       %__MODULE__{
         leftovers: text,
         consumed_so_far: 0,
-        position: Position.new(0, 0)
+        position: Position.new(0, 0),
+        source_name: opts[:source_name]
       }
     end
 

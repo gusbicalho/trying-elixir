@@ -33,19 +33,20 @@ defmodule Parsers.Position do
   # end
 
   defmodule Span do
-    defstruct [:start, :end]
+    defstruct [:start, :end, :source_name]
 
-    def new(%Parsers.Position{} = start, %Parsers.Position{} = end_) do
-      %__MODULE__{start: start, end: end_}
+    def new(%Parsers.Position{} = start, %Parsers.Position{} = end_, source_name \\ nil) do
+      %__MODULE__{start: start, end: end_, source_name: source_name}
     end
 
     def extend(
-          %__MODULE__{start: this_start, end: this_end},
+          %__MODULE__{start: this_start, end: this_end, source_name: source_name},
           %__MODULE__{start: that_start, end: that_end}
         ) do
       %__MODULE__{
         start: min(this_start, that_start),
-        end: max(this_end, that_end)
+        end: max(this_end, that_end),
+        source_name: source_name
       }
     end
   end
