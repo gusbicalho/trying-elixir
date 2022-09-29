@@ -4,23 +4,29 @@ defmodule LambdaCalculus.Pipeline.Parser do
 
   def stmt_parser do
     P.alternatives([
-      decl_parser() |> P.map(&PTree.Statement.declaration/1),
-      expr_parser() |> P.map(&PTree.Statement.expression/1)
+      decl_parser(),
+      expr_parser()
     ])
+    |> as_single_child_of(:stmt)
     |> P.also(P.Delimiter.whitespace())
   end
 
   def decl_parser() do
-    P.String.expect("let")
+    expect_key_token(:let)
     |> P.also(P.Delimiter.whitespace1())
-    |> P.then(identifier_parser())
+    |> P.paired_with(identifier_parser())
     |> P.also(P.Delimiter.whitespace())
-    |> P.also(P.String.expect("="))
+    |> P.paired_with(expect_key_token(:equals))
     |> P.also(P.Delimiter.whitespace())
     |> P.paired_with(expr_parser())
-    |> P.map(fn {identifier, definition} ->
-      PTree.Declaration.new(identifier, definition)
+    |> P.map(fn {{{let, identifier}, equals}, definition} ->
+      %PTree.Node{
+        type: :decl,
+        markers: [let, equals],
+        children: [identifier, definition]
+      }
     end)
+    |> spanned_node()
   end
 
   def expr_parser do
@@ -35,29 +41,31 @@ defmodule LambdaCalculus.Pipeline.Parser do
         application_parser()
       ])
     )
+    |> as_single_child_of(:expr)
     |> then(& &1.(state))
   end
 
   def lambda_parser do
-    expression_with_span(
-      P.String.expect("\\")
-      |> P.also(P.Delimiter.whitespace())
-      |> P.then(identifier_parser())
-      |> P.also(P.Delimiter.whitespace())
-      |> P.also(P.String.expect("->"))
-      |> P.paired_with(expr_parser())
-      |> P.map(fn {param_id, body_expr} ->
-        PTree.Lambda.new_expr(param_id, body_expr)
-      end)
-    )
+    expect_key_token(:backslash)
+    |> P.also(P.Delimiter.whitespace())
+    |> P.paired_with(identifier_parser())
+    |> P.also(P.Delimiter.whitespace())
+    |> P.paired_with(expect_key_token(:arrow))
+    |> P.paired_with(expr_parser())
+    |> P.map(fn {{{backslash, param_id}, arrow}, body_expr} ->
+      %PTree.Node{
+        type: :lambda,
+        markers: [backslash, arrow],
+        children: [param_id, body_expr]
+      }
+    end)
+    |> spanned_node()
   end
 
   def application_parser do
     P.at_least_one(application_sequence_item())
-    # |> P.also(P.Delimiter.whitespace())
     |> P.paired_with(
       P.optional(
-        # lambda_parser()
         P.Delimiter.whitespace()
         |> P.then(lambda_parser())
         |> P.backtracking()
@@ -71,20 +79,28 @@ defmodule LambdaCalculus.Pipeline.Parser do
           app_args
         end
 
-      Enum.reduce(
-        app_args,
-        app_head,
-        fn head, arg ->
-          PTree.Application.new_expr(
-            head,
-            arg,
-            position_span:
-              if head.meta.position_span && arg.meta.position_span do
-                P.Position.Span.extend(head.meta.position_span, arg.meta.position_span)
-              end
-          )
-        end
-      )
+      span =
+        Enum.reduce(
+          app_args,
+          app_head.span,
+          fn
+            arg, nil ->
+              arg.span
+
+            %{span: nil}, span ->
+              span
+
+            %{span: arg_span}, span ->
+              P.Position.Span.extend(span, arg_span)
+          end
+        )
+
+      %PTree.Node{
+        type: :application,
+        markers: [],
+        children: [app_head, app_args],
+        span: span
+      }
     end)
   end
 
@@ -93,29 +109,26 @@ defmodule LambdaCalculus.Pipeline.Parser do
     |> P.then(
       P.alternatives([
         parens(expr_parser()),
-        identifier_parser() |> P.map(&PTree.Lookup.new_expr/1),
-        Parsers.Numbers.integer() |> P.map(&PTree.Literal.new_expr/1)
+        identifier_parser(),
+        literal_integer_parser()
       ])
-      |> expression_with_span()
     )
   end
 
-  defp expression_with_span(parser) do
-    P.with_span(parser)
-    |> P.map(fn {%PTree.Expression{} = expr, span} ->
-      update_in(
-        expr.meta,
-        &Map.merge(&1, PTree.Expression.Meta.new(position_span: span))
-      )
-    end)
-  end
-
   def parens(parser) do
-    P.String.expect("(")
+    expect_key_token(:open_paren)
     |> P.also(P.Delimiter.whitespace())
-    |> P.then(parser)
+    |> P.paired_with(parser)
     |> P.also(P.Delimiter.whitespace())
-    |> P.also(P.String.expect(")"))
+    |> P.paired_with(expect_key_token(:close_paren))
+    |> P.map(fn {{open_paren, item}, close_paren} ->
+      %PTree.Node{
+        type: :parens,
+        markers: [open_paren, close_paren],
+        children: [item]
+      }
+    end)
+    |> spanned_node()
   end
 
   def identifier_parser do
@@ -125,9 +138,84 @@ defmodule LambdaCalculus.Pipeline.Parser do
       end,
       "lowercase letter"
     )
+    |> as_atom_node(:identifier)
+  end
+
+  def literal_integer_parser do
+    Parsers.Numbers.integer()
+    |> as_single_child_of(:literal_integer)
+  end
+
+  defp expect_key_token(type) do
+    key_token(type) |> as_atom_node(type)
+  end
+
+  defp key_token(:open_paren) do
+    P.String.expect("(")
+  end
+
+  defp key_token(:close_paren) do
+    P.String.expect(")")
+  end
+
+  defp key_token(:let) do
+    P.String.expect("let")
+  end
+
+  defp key_token(:equals) do
+    P.String.expect("=")
+  end
+
+  defp key_token(:backslash) do
+    P.String.expect("\\")
+  end
+
+  defp key_token(:arrow) do
+    P.String.expect("->")
+  end
+
+  # Generic helpers
+
+  defp as_atom_node(string_parser, type) do
+    string_parser
+    |> P.map(fn
+      name when is_atom(name) ->
+        %PTree.Node{
+          type: type,
+          markers: [name],
+          children: []
+        }
+
+      name when is_binary(name) ->
+        %PTree.Node{
+          type: type,
+          markers: [String.to_atom(name)],
+          children: []
+        }
+    end)
+    |> spanned_node()
+  end
+
+  defp as_single_child_of(child_parser, parent_type) do
+    child_parser
+    |> P.map(fn child ->
+      %PTree.Node{
+        type: parent_type,
+        children: [child],
+        markers: []
+      }
+    end)
+    |> spanned_node()
+  end
+
+  def spanned_node(node_parser) do
+    node_parser
     |> P.with_span()
-    |> P.map(fn {name, span} ->
-      PTree.Identifier.new(name, PTree.Identifier.Meta.new(position_span: span))
+    |> P.map(fn {node, span} ->
+      %PTree.Node{
+        node
+        | span: span
+      }
     end)
   end
 end
