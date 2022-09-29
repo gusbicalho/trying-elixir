@@ -14,6 +14,17 @@ defmodule LambdaCalculus do
     stmt
   end
 
+  def test_stmt2(s, source_name \\ nil) do
+    {stmt, ""} =
+      Parsers.run!(
+        LambdaCalculus.Pipeline.Parser2.stmt_parser(),
+        s,
+        source_name: source_name
+      )
+
+    stmt
+  end
+
   def test do
     "\\ q -> plus q 1      "
     |> IO.inspect()
