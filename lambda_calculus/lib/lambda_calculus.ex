@@ -6,16 +6,11 @@ defmodule LambdaCalculus do
   alias LambdaCalculus.Pipeline.AST
 
   def test_stmt(s, source_name \\ nil) do
-    {parsed_stmt, ""} =
-      Parsers.run!(
-        LambdaCalculus.Pipeline.TextToParseTree.stmt_parser(),
-        s,
-        source_name: source_name
-      )
-
-    {:ok, stmt} = LambdaCalculus.Pipeline.ParseTreeToAST.Statement.parse(parsed_stmt)
-
-    stmt
+    with {{:ok, stmt}, ""} <-
+           LambdaCalculus.Pipeline.TextToParseTree.parse_stmt(s, source_name: source_name),
+         {:ok, stmt} <- LambdaCalculus.Pipeline.ParseTreeToAST.Statement.parse(stmt) do
+      stmt
+    end
   end
 
   def test do

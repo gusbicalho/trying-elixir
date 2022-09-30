@@ -2,6 +2,10 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
   alias Parsers, as: P
   alias LambdaCalculus.Pipeline.ParseTree, as: PTree
 
+  def parse_stmt(source, opts \\ []) do
+    P.run(stmt_parser(), source, opts)
+  end
+
   def stmt_parser do
     P.alternatives([
       decl_parser(),
