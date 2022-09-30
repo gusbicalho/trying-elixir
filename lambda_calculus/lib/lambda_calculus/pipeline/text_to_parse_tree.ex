@@ -1,4 +1,4 @@
-defmodule LambdaCalculus.Pipeline.Parser do
+defmodule LambdaCalculus.Pipeline.TextToParseTree do
   alias Parsers, as: P
   alias LambdaCalculus.Pipeline.ParseTree, as: PTree
 

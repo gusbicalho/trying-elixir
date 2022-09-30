@@ -8,12 +8,12 @@ defmodule LambdaCalculus do
   def test_stmt(s, source_name \\ nil) do
     {parsed_stmt, ""} =
       Parsers.run!(
-        LambdaCalculus.Pipeline.Parser.stmt_parser(),
+        LambdaCalculus.Pipeline.TextToParseTree.stmt_parser(),
         s,
         source_name: source_name
       )
 
-    {:ok, stmt} = LambdaCalculus.Pipeline.ParseTreeAST.parse_node_to_stmt(parsed_stmt)
+    {:ok, stmt} = LambdaCalculus.Pipeline.ParseTreeToAST.Statement.parse(parsed_stmt)
 
     stmt
   end
@@ -44,11 +44,7 @@ defmodule LambdaCalculus do
           }
         }
       }
-    } =
-      "\\ q -> plus q 1      "
-      |> IO.inspect()
-      |> test_stmt()
-      |> IO.inspect()
+    } = test_stmt("\\ q -> plus q 1      ")
 
     %AST.Statement{
       statement: %AST.Declaration{
@@ -64,11 +60,7 @@ defmodule LambdaCalculus do
           }
         }
       }
-    } =
-      "let id = \\a -> a              "
-      |> IO.inspect()
-      |> test_stmt("second.lam")
-      |> IO.inspect()
+    } = test_stmt("let id = \\a -> a              ", "second.lam")
 
     nil
   end
