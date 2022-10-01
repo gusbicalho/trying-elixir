@@ -40,6 +40,7 @@ defmodule LambdaCalculus.MixProject do
   defp deps do
     [
       {:boundary, "~> 0.9", runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:typed_struct, git: "https://github.com/Liveflow-io/typed_struct.git", ref: "5234d25"}
     ]
   end

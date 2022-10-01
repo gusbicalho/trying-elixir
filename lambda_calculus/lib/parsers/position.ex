@@ -1,12 +1,23 @@
 defmodule Parsers.Position do
-  defstruct [:line, :column]
+  use TypedStruct
+
+  typedstruct do
+    field :line, integer(), enforce: true
+    field :column, integer(), enforce: true
+  end
 
   def new(line, column) do
     %__MODULE__{line: line, column: column}
   end
 
   defmodule Span do
-    defstruct [:start, :end, :source_name]
+    use TypedStruct
+
+    typedstruct do
+      field :start, Parsers.Position.t(), enforce: true
+      field :end, Parsers.Position.t(), enforce: true
+      field :source_name, String.t() | nil
+    end
 
     def new(%Parsers.Position{} = start, %Parsers.Position{} = end_, source_name \\ nil) do
       %__MODULE__{start: start, end: end_, source_name: source_name}

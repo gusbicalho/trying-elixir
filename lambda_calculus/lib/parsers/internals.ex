@@ -2,7 +2,14 @@ defmodule Parsers.Internals do
   alias Parsers.Position
 
   defmodule State do
-    defstruct [:leftovers, :consumed_so_far, :position, :source_name]
+    use TypedStruct
+
+    typedstruct do
+      field :leftovers, String.t(), enforce: true
+      field :consumed_so_far, integer(), enforce: true
+      field :position, Position.t(), enforce: true
+      field :source_name, String.t() | nil
+    end
 
     def new(text, opts \\ []) do
       %__MODULE__{

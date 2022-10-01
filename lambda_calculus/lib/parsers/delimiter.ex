@@ -25,8 +25,7 @@ defmodule Parsers.Delimiter do
   end
 
   def whitespace(state) do
-    whitespace_count =
-      String.length(state.leftovers) - String.length(String.trim_leading(state.leftovers))
+    whitespace_count = String.length(state.leftovers) - String.length(String.trim_leading(state.leftovers))
 
     {State.advance(state, whitespace_count), {:ok, nil}}
   end
@@ -36,8 +35,7 @@ defmodule Parsers.Delimiter do
   end
 
   def whitespace1(state) do
-    whitespace_count =
-      String.length(state.leftovers) - String.length(String.trim_leading(state.leftovers))
+    whitespace_count = String.length(state.leftovers) - String.length(String.trim_leading(state.leftovers))
 
     if whitespace_count > 0 do
       {State.advance(state, whitespace_count), {:ok, nil}}
