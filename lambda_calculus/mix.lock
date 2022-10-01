@@ -1,0 +1,4 @@
+%{
+  "boundary": {:hex, :boundary, "0.9.3", "e92f0a1297643513efa2021164ce717bade46c0bc3e3cad6c472fe5dfb63ed50", [:mix], [], "hexpm", "fb40556c98cb7fafa10758e35056beb91f36b93c0c90601c0a735e25944460ea"},
+  "typed_struct": {:git, "https://github.com/Liveflow-io/typed_struct.git", "5234d2570607ea5b1a60e404de59ff78600c1642", [ref: "5234d25"]},
+}

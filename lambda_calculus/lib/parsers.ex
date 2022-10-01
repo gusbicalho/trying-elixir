@@ -5,6 +5,17 @@ defmodule Parsers do
       - returns a new state and either an error, or a result
   """
 
+  use Boundary,
+    deps: [],
+    exports: [
+      Delimiter,
+      Grapheme,
+      Numbers,
+      Position,
+      Position.Span,
+      String
+    ]
+
   alias Parsers.Internals.State
 
   def run(parser, text, opts \\ []) do

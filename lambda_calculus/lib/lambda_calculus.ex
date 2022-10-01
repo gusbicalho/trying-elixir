@@ -3,6 +3,10 @@ defmodule LambdaCalculus do
 
   """
 
+  use Boundary,
+    deps: [Parsers],
+    exports: []
+
   alias LambdaCalculus.Pipeline.AST
 
   def test_stmt(s, source_name \\ nil) do
