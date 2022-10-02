@@ -10,8 +10,13 @@ defmodule LambdaCalculus do
   alias LambdaCalculus.Pipeline.AST
 
   def test_stmt(s, source_name \\ nil) do
-    with {{:ok, stmt}, ""} <-
+    with {parse_result, leftovers} <-
            LambdaCalculus.Pipeline.TextToParseTree.parse_stmt(s, source_name: source_name),
+         nil <-
+           (if leftovers !== "" do
+              {:error, ["unexpected ", leftovers]}
+            end),
+         {:ok, stmt} <- parse_result,
          {:ok, stmt} <- LambdaCalculus.Pipeline.ParseTreeToAST.Statement.parse(stmt),
          stmt = LambdaCalculus.Pipeline.ASTAnalysis.Scope.analyze(stmt) do
       stmt
@@ -30,13 +35,13 @@ defmodule LambdaCalculus do
                   function: %AST.Expression{
                     expression: %AST.Lookup{
                       lookup: %AST.Identifier{name: :plus},
-                      meta: %{scope: :global}
+                      meta: [{:scope, :global} | _]
                     }
                   },
                   argument: %AST.Expression{
                     expression: %AST.Lookup{
                       lookup: %AST.Identifier{name: :q},
-                      meta: %{scope: {:local, 0}}
+                      meta: [{:scope, {:local, 0}} | _]
                     }
                   }
                 }
@@ -61,7 +66,7 @@ defmodule LambdaCalculus do
             body: %AST.Expression{
               expression: %AST.Lookup{
                 lookup: %AST.Identifier{name: :a},
-                meta: %{scope: {:local, 0}}
+                meta: [{:scope, {:local, 0}} | _]
               }
             }
           }

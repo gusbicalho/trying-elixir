@@ -18,6 +18,10 @@ defmodule Parsers do
 
   alias Parsers.Internals.State
 
+  @type parser_return(result) :: {:ok, result} | {:error, any()}
+  @type parser(result) :: (State.t() -> {parser_return(result), State.t()})
+
+  @spec run(parser(result), String.t(), Keyword.t()) :: {parser_return(result), String.t()} when result: any()
   def run(parser, text, opts \\ []) do
     {state, result} = parser.(State.new(text, opts))
     {result, state.leftovers}

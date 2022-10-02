@@ -1,11 +1,14 @@
 defmodule LambdaCalculus.Pipeline.TextToParseTree do
   alias Parsers, as: P
   alias LambdaCalculus.Pipeline.ParseTree, as: PTree
+  alias LambdaCalculus.Pipeline.ParseTree.Node
 
+  @spec parse_stmt(binary, Keyword.t()) :: {P.parser_return(Node.t()), binary}
   def parse_stmt(source, opts \\ []) do
     P.run(stmt_parser(), source, opts)
   end
 
+  @spec stmt_parser :: P.parser(Node.t())
   def stmt_parser do
     P.alternatives([
       decl_parser(),
@@ -15,6 +18,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
     |> P.also(P.Delimiter.whitespace())
   end
 
+  @spec decl_parser :: P.parser(Node.t())
   def decl_parser() do
     expect_key_token(:let)
     |> P.also(P.Delimiter.whitespace1())
@@ -33,6 +37,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
     |> spanned_node()
   end
 
+  @spec expr_parser :: P.parser(Node.t())
   def expr_parser do
     &expr_parser/1
   end
@@ -49,6 +54,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
     |> then(& &1.(state))
   end
 
+  @spec lambda_parser :: P.parser(Node.t())
   def lambda_parser do
     expect_key_token(:backslash)
     |> P.also(P.Delimiter.whitespace())
@@ -66,6 +72,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
     |> spanned_node()
   end
 
+  @spec application_parser :: P.parser(Node.t())
   def application_parser do
     P.at_least_one(application_sequence_item())
     |> P.paired_with(

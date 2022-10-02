@@ -11,16 +11,18 @@ defmodule LambdaCalculus.Pipeline.AST do
   defmodule Expression do
     use TypedStruct
 
-    @type child() ::
-            Lambda.t() | Application.t() | Lookup.t() | Literal.t()
+    @type child(meta) ::
+            Lambda.t(meta) | Application.t(meta) | Lookup.t(meta) | Literal.t(meta)
 
     typedstruct do
-      field :expression, child(), enforce: true
-      field :meta, map, default: %{}
+      parameter :meta
+
+      field :expression, child(meta), enforce: true
+      field :meta, meta, default: %{}
     end
 
-    @spec new(child(), map) :: __MODULE__.t()
-    def new(value, %{} = meta) do
+    @spec new(value, meta) :: __MODULE__.t(meta) when meta: any(), value: child(meta)
+    def new(value, meta) do
       %__MODULE__{expression: value, meta: meta}
     end
   end
@@ -29,12 +31,14 @@ defmodule LambdaCalculus.Pipeline.AST do
     use TypedStruct
 
     typedstruct do
+      parameter :meta
+
       field :name, atom, enforce: true
-      field :meta, map, default: %{}
+      field :meta, meta, default: %{}
     end
 
-    @spec new(atom, map) :: __MODULE__.t()
-    def new(name, %{} = meta \\ %{}) when is_atom(name) do
+    @spec new(atom, meta) :: __MODULE__.t(meta) when meta: any()
+    def new(name, meta) when is_atom(name) do
       %__MODULE__{name: name, meta: meta}
     end
   end
@@ -43,13 +47,15 @@ defmodule LambdaCalculus.Pipeline.AST do
     use TypedStruct
 
     typedstruct do
-      field :parameter, Identifier.t(), enforce: true
-      field :body, Expression.t(), enforce: true
-      field :meta, map, default: %{}
+      parameter :meta
+
+      field :parameter, Identifier.t(meta), enforce: true
+      field :body, Expression.t(meta), enforce: true
+      field :meta, meta, default: %{}
     end
 
-    @spec new(Identifier.t(), Expression.t(), map) :: __MODULE__.t()
-    def new(%Identifier{} = parameter, %Expression{} = body, %{} = meta \\ %{}) do
+    @spec new(Identifier.t(meta), Expression.t(meta), meta) :: __MODULE__.t(meta) when meta: any()
+    def new(%Identifier{} = parameter, %Expression{} = body, meta) do
       %__MODULE__{parameter: parameter, body: body, meta: meta}
     end
   end
@@ -58,13 +64,15 @@ defmodule LambdaCalculus.Pipeline.AST do
     use TypedStruct
 
     typedstruct do
-      field :function, Expression.t(), enforce: true
-      field :argument, Expression.t(), enforce: true
-      field :meta, map, default: %{}
+      parameter :meta
+
+      field :function, Expression.t(meta), enforce: true
+      field :argument, Expression.t(meta), enforce: true
+      field :meta, meta, default: %{}
     end
 
-    @spec new(Expression.t(), Expression.t(), map) :: __MODULE__.t()
-    def new(%Expression{} = function, %Expression{} = argument, %{} = meta \\ %{}) do
+    @spec new(Expression.t(meta), Expression.t(meta), meta) :: __MODULE__.t(meta) when meta: any()
+    def new(%Expression{} = function, %Expression{} = argument, meta) do
       %__MODULE__{function: function, argument: argument, meta: meta}
     end
   end
@@ -73,12 +81,13 @@ defmodule LambdaCalculus.Pipeline.AST do
     use TypedStruct
 
     typedstruct do
-      field :lookup, Identifier.t(), enforce: true
-      field :meta, map, default: %{}
+      parameter :meta
+      field :lookup, Identifier.t(meta), enforce: true
+      field :meta, meta, default: %{}
     end
 
-    @spec new(Identifier.t(), map) :: __MODULE__.t()
-    def new(%Identifier{} = identifier, %{} = meta \\ %{}) do
+    @spec new(Identifier.t(meta), meta) :: __MODULE__.t(meta) when meta: any()
+    def new(%Identifier{} = identifier, meta) do
       %__MODULE__{lookup: identifier, meta: meta}
     end
   end
@@ -87,12 +96,13 @@ defmodule LambdaCalculus.Pipeline.AST do
     use TypedStruct
 
     typedstruct do
+      parameter :meta
       field :literal, any, enforce: true
-      field :meta, map, default: %{}
+      field :meta, meta, default: %{}
     end
 
-    @spec new(any, map) :: __MODULE__.t()
-    def new(literal, %{} = meta \\ %{}) do
+    @spec new(any, meta) :: __MODULE__.t(meta) when meta: any()
+    def new(literal, meta) do
       %__MODULE__{literal: literal, meta: meta}
     end
   end
@@ -101,13 +111,14 @@ defmodule LambdaCalculus.Pipeline.AST do
     use TypedStruct
 
     typedstruct do
-      field :name, Identifier.t(), enforce: true
-      field :definition, Expression.t(), enforce: true
-      field :meta, map, default: %{}
+      parameter :meta
+      field :name, Identifier.t(meta), enforce: true
+      field :definition, Expression.t(meta), enforce: true
+      field :meta, meta, default: %{}
     end
 
-    @spec new(Identifier.t(), Expression.t(), map) :: __MODULE__.t()
-    def new(%Identifier{} = name, %Expression{} = definition, %{} = meta \\ %{}) do
+    @spec new(Identifier.t(meta), Expression.t(meta), meta) :: __MODULE__.t(meta) when meta: any()
+    def new(%Identifier{} = name, %Expression{} = definition, meta) do
       %__MODULE__{name: name, definition: definition, meta: meta}
     end
   end
@@ -115,22 +126,23 @@ defmodule LambdaCalculus.Pipeline.AST do
   defmodule Statement do
     use TypedStruct
 
-    @type child() ::
-            Declaration.t() | Expression.t()
+    @type child(meta) ::
+            Declaration.t(meta) | Expression.t(meta)
 
     typedstruct do
-      field :statement, child(), enforce: true
-      field :meta, map, default: %{}
+      parameter :meta
+      field :statement, child(meta), enforce: true
+      field :meta, meta, default: %{}
     end
 
-    @spec new(child(), map) :: __MODULE__.t()
+    @spec new(child(meta), meta) :: __MODULE__.t(meta) when meta: any()
     def new(value, meta \\ %{})
 
-    def new(%Expression{} = expr, %{} = meta) do
+    def new(%Expression{} = expr, meta) do
       %__MODULE__{statement: expr, meta: meta}
     end
 
-    def new(%Declaration{} = decl, %{} = meta) do
+    def new(%Declaration{} = decl, meta) do
       %__MODULE__{statement: decl, meta: meta}
     end
   end

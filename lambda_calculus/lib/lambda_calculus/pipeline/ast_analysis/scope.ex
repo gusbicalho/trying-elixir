@@ -1,6 +1,10 @@
 defmodule LambdaCalculus.Pipeline.ASTAnalysis.Scope do
   alias LambdaCalculus.Pipeline.AST
 
+  @type scope :: :global | {:local, non_neg_integer()}
+  @type with_scope(meta) :: [scope: scope | meta] | meta
+
+  @spec analyze(AST.Statement.t(meta)) :: AST.Statement.t(with_scope(meta)) when meta: Keyword.t()
   def analyze(%AST.Statement{} = stmt) do
     analyze_stmt(stmt, [])
   end
@@ -43,7 +47,7 @@ defmodule LambdaCalculus.Pipeline.ASTAnalysis.Scope do
     update_in(
       lookup.meta,
       fn meta ->
-        Map.put_new(
+        Keyword.put(
           meta,
           :scope,
           case Enum.find_index(locals, &(&1 === lookup_name)) do

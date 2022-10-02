@@ -8,12 +8,14 @@ defmodule LambdaCalculus.Pipeline.ParseTreeToAST do
   alias __MODULE__.Identifier
 
   defmodule Meta do
+    @type t() :: [parse_node: Node.t()]
     def meta_from(%Node{} = parse_node) do
-      %{parse_node: parse_node}
+      [parse_node: parse_node]
     end
   end
 
   defmodule Statement do
+    @spec parse(Node.t()) :: {:error, [...]} | {:ok, AST.Statement.t(Meta.t())}
     def parse(%Node{type: :stmt} = parse_node) do
       case parse_node do
         %Node{children: [child]} ->
