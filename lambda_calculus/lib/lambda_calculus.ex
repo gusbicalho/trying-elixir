@@ -9,7 +9,7 @@ defmodule LambdaCalculus do
 
   alias LambdaCalculus.Pipeline.AST
 
-  def test_stmt(s, source_name \\ nil) do
+  def test_parse_stmt(s, source_name \\ nil) do
     with {parse_result, leftovers} <-
            LambdaCalculus.Pipeline.TextToParseTree.parse_stmt(s, source_name: source_name),
          nil <-
@@ -23,7 +23,7 @@ defmodule LambdaCalculus do
     end
   end
 
-  def test do
+  def test_parse do
     %AST.Statement{
       statement: %AST.Expression{
         expression: %AST.Lambda{
@@ -55,7 +55,7 @@ defmodule LambdaCalculus do
           }
         }
       }
-    } = test_stmt("\\ q -> plus q 1      ")
+    } = test_parse_stmt("\\ q -> plus q 1      ")
 
     %AST.Statement{
       statement: %AST.Declaration{
@@ -72,8 +72,38 @@ defmodule LambdaCalculus do
           }
         }
       }
-    } = test_stmt("let id = \\a -> a              ", "second.lam")
+    } = test_parse_stmt("let id = \\a -> a              ", "second.lam")
 
     nil
+  end
+
+  def test_eval_server() do
+    alias LambdaCalculus.EvalServer
+    {:ok, pid} = EvalServer.start_link([])
+    eval = fn s -> EvalServer.eval(pid, s) end
+
+    {:ok, 5} = eval.("plus 2 3")
+    {:ok, 5} = eval.("let five = plus 2 3")
+    {:ok, _} = eval.("let p = plus")
+    {:ok, 5} = eval.("p 2 3")
+    {:ok, _} = eval.("let id = \\a -> a")
+    {:ok, 5} = eval.("id p 2 3")
+
+    {:ok, _} = eval.("let times = \\m -> \\n -> repeatedly m (plus n) 0")
+    {:ok, 42} = eval.("times 6 7")
+
+    {:ok, _} = eval.("let nil = \\cons -> \\nil -> nil")
+    {:ok, _} = eval.("let cons = \\head -> \\tail -> \\cons -> \\nil -> cons head (tail cons nil)")
+    {:ok, _} = eval.("let sum = \\list -> list plus 0")
+    {:ok, _} = eval.("let product = \\list -> list times 1")
+    {:ok, _} = eval.("let somelist = cons 2 (cons 4 (cons 6 nil))")
+    {:ok, 12} = eval.("sum somelist")
+    {:ok, 48} = eval.("product somelist")
+
+    # the global scope is dynamic!
+    {:ok, _} = eval.("let times = plus")
+    {:ok, 13} = eval.("product somelist")
+
+    :ok
   end
 end
