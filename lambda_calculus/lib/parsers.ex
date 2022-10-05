@@ -16,6 +16,7 @@ defmodule Parsers do
       String
     ]
 
+  alias Parsers.Error
   alias Parsers.Internals.State
 
   @type parser_return(result) :: {:ok, result} | {:error, any()}
@@ -124,9 +125,12 @@ defmodule Parsers do
   def falling_back(parser, fallback_parser) do
     fn state ->
       case parser.(state) do
-        {new_state, {:error, _}}
+        {new_state, {:error, e1}}
         when new_state.consumed_so_far == state.consumed_so_far ->
-          fallback_parser.(state)
+          case fallback_parser.(state) do
+            {_, {:ok, _}} = ok -> ok
+            {new_state, {:error, e2}} -> {new_state, {:error, Error.merge(e1, e2)}}
+          end
 
         other ->
           other

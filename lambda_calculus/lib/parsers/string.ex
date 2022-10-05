@@ -1,4 +1,5 @@
 defmodule Parsers.String do
+  alias Parsers.Error
   alias Parsers.Internals.State
 
   def check(expected) do
@@ -13,14 +14,13 @@ defmodule Parsers.String do
         state = State.advance(state, String.length(expected))
         {state, {:ok, expected}}
       else
-        {state,
-         {:error,
-          [
-            "Expected ",
-            expected,
-            " but got ",
-            String.slice(state.leftovers, 0, String.length(expected))
-          ]}}
+        but_found =
+          case String.slice(state.leftovers, 0, String.length(expected)) do
+            <<>> -> :end_of_input
+            other -> other
+          end
+
+        {state, {:error, Error.expected(expected, but_found)}}
       end
     end
   end
@@ -41,10 +41,10 @@ defmodule Parsers.String do
       if advance == 0 do
         case String.next_grapheme(state.leftovers) do
           nil ->
-            {state, {:error, ["Unexpected end of input. Expected at least one ", description]}}
+            {state, {:error, Error.expected(%Error.Expected{description: description})}}
 
           {grapheme, _} ->
-            {state, {:error, ["Unexpected ", grapheme, ". Expected at least one ", description]}}
+            {state, {:error, Error.expected(%Error.Expected{description: description}, grapheme)}}
         end
       else
         result = String.slice(state.leftovers, 0, advance)

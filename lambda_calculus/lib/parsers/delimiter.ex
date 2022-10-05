@@ -1,5 +1,6 @@
 defmodule Parsers.Delimiter do
   alias Parsers.Internals.State
+  alias Parsers.Error
 
   def expect_end() do
     &expect_end/1
@@ -13,10 +14,11 @@ defmodule Parsers.Delimiter do
       {grapheme, _} ->
         {state,
          {:error,
-          [
+          Error.unexpected(grapheme)
+          |> Error.with_message([
             "Expected end of input, but found ",
             grapheme
-          ]}}
+          ])}}
     end
   end
 
@@ -40,13 +42,13 @@ defmodule Parsers.Delimiter do
     if whitespace_count > 0 do
       {State.advance(state, whitespace_count), {:ok, nil}}
     else
-      case String.next_grapheme(state.leftovers) do
-        nil ->
-          {state, {:error, "Expected whitespace, got end of input"}}
+      unexpected =
+        case String.next_grapheme(state.leftovers) do
+          nil -> :end_of_input
+          {g, _} -> g
+        end
 
-        {g, _} ->
-          {state, {:error, ["Expected whitespace, got ", g]}}
-      end
+      {state, {:error, Error.expected(Error.Expected.whitespace(), unexpected)}}
     end
   end
 end

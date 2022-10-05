@@ -1,4 +1,6 @@
 defmodule Parsers.Grapheme do
+  alias Parsers.Error
+
   def any() do
     &any/1
   end
@@ -6,7 +8,10 @@ defmodule Parsers.Grapheme do
   def any(state) do
     case String.first(state.leftovers) do
       nil ->
-        {state, {:error, "Unexpected end of input. Expected any grapheme."}}
+        {state,
+         Error.expected(%Error.Expected{
+           description: "any grapheme"
+         })}
 
       grapheme ->
         {state, {:ok, grapheme}}
@@ -17,13 +22,13 @@ defmodule Parsers.Grapheme do
     fn state ->
       case String.first(state.leftovers) do
         nil ->
-          {state, {:error, ["Unexpected end of input. Expected ", description]}}
+          {state, {:error, Error.expected(%Error.Expected{description: description})}}
 
         grapheme ->
           if predicate.(grapheme) do
             {state, {:ok, grapheme}}
           else
-            {state, {:error, ["Unexpected ", grapheme, ". Expected ", description]}}
+            {state, {:error, Error.expected(%Error.Expected{description: description}, grapheme)}}
           end
       end
     end

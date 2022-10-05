@@ -23,11 +23,11 @@ defmodule LambdaCalculus.EvalServer do
   @impl true
   def handle_call({:eval, text}, _from, global_env) do
     with {parse_result, leftovers} <- Pipeline.TextToParseTree.parse_stmt(text),
+         {:ok, stmt} <- parse_result,
          nil <-
            (if leftovers !== "" do
               {:error, ["unexpected ", leftovers]}
             end),
-         {:ok, stmt} <- parse_result,
          {:ok, stmt} <- Pipeline.ParseTreeToAST.Statement.parse(stmt),
          stmt = Pipeline.ASTAnalysis.Scope.analyze(stmt),
          {:ok, {global_env, result}} <- Pipeline.Interpret.interpret_statement(global_env, stmt) do
