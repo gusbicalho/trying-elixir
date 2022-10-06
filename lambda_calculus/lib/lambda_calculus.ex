@@ -72,7 +72,7 @@ defmodule LambdaCalculus do
           }
         }
       }
-    } = test_parse_stmt("let id = \\a -> a              ", "second.lam")
+    } = test_parse_stmt("id = \\a -> a              ", "second.lam")
 
     nil
   end
@@ -82,27 +82,27 @@ defmodule LambdaCalculus do
     {:ok, pid} = EvalServer.start_link([])
     eval = fn s -> EvalServer.eval(pid, s) end
 
-    {:ok, 5} = eval.("plus 2 3")
-    {:ok, 5} = eval.("let five = plus 2 3")
-    {:ok, _} = eval.("let p = plus")
-    {:ok, 5} = eval.("p 2 3")
-    {:ok, _} = eval.("let id = \\a -> a")
-    {:ok, 5} = eval.("id p 2 3")
+    {:ok, 5, _} = eval.("plus 2 3")
+    {:ok, 5, _} = eval.("five = plus 2 3")
+    {:ok, _, _} = eval.("p = plus")
+    {:ok, 5, _} = eval.("p 2 3")
+    {:ok, _, _} = eval.("id = \\a -> a")
+    {:ok, 5, _} = eval.("id p 2 3")
 
-    {:ok, _} = eval.("let times = \\m -> \\n -> repeatedly m (plus n) 0")
-    {:ok, 42} = eval.("times 6 7")
+    {:ok, _, _} = eval.("times = \\m -> \\n -> repeatedly m (plus n) 0")
+    {:ok, 42, _} = eval.("times 6 7")
 
-    {:ok, _} = eval.("let nil = \\cons -> \\nil -> nil")
-    {:ok, _} = eval.("let cons = \\head -> \\tail -> \\cons -> \\nil -> cons head (tail cons nil)")
-    {:ok, _} = eval.("let sum = \\list -> list plus 0")
-    {:ok, _} = eval.("let product = \\list -> list times 1")
-    {:ok, _} = eval.("let somelist = cons 2 (cons 4 (cons 6 nil))")
-    {:ok, 12} = eval.("sum somelist")
-    {:ok, 48} = eval.("product somelist")
+    {:ok, _, _} = eval.("nil = \\cons -> \\nil -> nil")
+    {:ok, _, _} = eval.("cons = \\head -> \\tail -> \\cons -> \\nil -> cons head (tail cons nil)")
+    {:ok, _, _} = eval.("sum = \\list -> list plus 0")
+    {:ok, _, _} = eval.("product = \\list -> list times 1")
+    {:ok, _, _} = eval.("somelist = cons 2 (cons 4 (cons 6 nil))")
+    {:ok, 12, _} = eval.("sum somelist")
+    {:ok, 48, _} = eval.("product somelist")
 
     # the global scope is dynamic!
-    {:ok, _} = eval.("let times = plus")
-    {:ok, 13} = eval.("product somelist")
+    {:ok, _, _} = eval.("times = plus")
+    {:ok, 13, _} = eval.("product somelist")
 
     :ok
   end

@@ -20,17 +20,17 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
 
   @spec decl_parser :: P.parser(Node.t())
   def decl_parser() do
-    expect_key_token(:let)
-    |> P.also(P.Delimiter.whitespace1())
-    |> P.paired_with(identifier_parser())
-    |> P.also(P.Delimiter.whitespace())
-    |> P.paired_with(expect_key_token(:equals))
+    P.backtracking(
+      identifier_parser()
+      |> P.also(P.Delimiter.whitespace())
+      |> P.paired_with(expect_key_token(:equals))
+    )
     |> P.also(P.Delimiter.whitespace())
     |> P.paired_with(expr_parser())
-    |> P.map(fn {{{let, identifier}, equals}, definition} ->
+    |> P.map(fn {{identifier, equals}, definition} ->
       %PTree.Node{
         type: :decl,
-        markers: [let, equals],
+        markers: [equals],
         children: [identifier, definition]
       }
     end)
@@ -167,10 +167,6 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
 
   defp key_token(:close_paren) do
     P.String.expect(")")
-  end
-
-  defp key_token(:let) do
-    P.String.expect("let")
   end
 
   defp key_token(:equals) do
