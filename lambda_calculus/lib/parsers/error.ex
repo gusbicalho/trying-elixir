@@ -90,10 +90,14 @@ defmodule Parsers.Error do
 
   def describe_expectations(%__MODULE__{expected: expected, unexpected: but_found}) do
     [
+      "Expected ",
       if is_list(expected) do
-        ["Expected one of: ", Enum.map(expected, &describe_expected/1)]
+        [
+          "one of: ",
+          expected |> Enum.map(&describe_expected/1) |> Enum.intersperse(", ")
+        ]
       else
-        ["Expected ", describe_expected(expected)]
+        describe_expected(expected)
       end,
       case but_found do
         nil -> "."
