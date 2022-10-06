@@ -201,6 +201,12 @@ defmodule LambdaCalculus.Pipeline.ParseTreeToAST do
       end
     end
 
+    defp parse_application_item_to_expression(%Node{type: :lambda} = parse_node) do
+      with {:ok, lambda} <- Lambda.parse(parse_node) do
+        {:ok, AST.Expression.new(lambda, Meta.meta_from(parse_node))}
+      end
+    end
+
     defp parse_application_item_to_expression(other_node) do
       {:error, [:unexpected_application_item, other_node]}
     end

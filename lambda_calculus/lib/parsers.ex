@@ -9,6 +9,7 @@ defmodule Parsers do
     deps: [],
     exports: [
       Delimiter,
+      Error,
       Grapheme,
       Numbers,
       Position,
