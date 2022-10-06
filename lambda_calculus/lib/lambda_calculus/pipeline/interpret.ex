@@ -22,6 +22,10 @@ defmodule LambdaCalculus.Pipeline.Interpret do
     end
   end
 
+  defmodule LambdaError do
+    defexception message: "Runtime error"
+  end
+
   @spec interpret_expression(
           Runtime.global_env(),
           AST.Expression.t(scope: :global | {:local, non_neg_integer()})
@@ -29,7 +33,11 @@ defmodule LambdaCalculus.Pipeline.Interpret do
           {:ok, Runtime.value()} | {:error, any()}
   def interpret_expression(%{} = global_env, %AST.Expression{} = expr) do
     with {:ok, compiled_expr} <- compile(expr) do
-      {:ok, compiled_expr.(global_env, [])}
+      try do
+        {:ok, compiled_expr.(global_env, [])}
+      rescue
+        e in LambdaError -> {:error, e.message}
+      end
     end
   end
 
@@ -69,11 +77,13 @@ defmodule LambdaCalculus.Pipeline.Interpret do
     lookup =
       case Keyword.fetch(meta, :scope) do
         :error ->
-          raise "Bad local lookup for #{name}: no scope annotation"
+          raise LambdaError, message: "Bad local lookup for #{name}: no scope annotation"
 
         {:ok, :global} ->
           fn global_env, _ ->
-            Map.fetch!(global_env, name)
+            Map.get_lazy(global_env, name, fn ->
+              raise LambdaError, message: "Undefined global #{name}"
+            end)
           end
 
         {:ok, {:local, de_brujn_index}} ->
@@ -83,10 +93,12 @@ defmodule LambdaCalculus.Pipeline.Interpret do
                 value
 
               {other_name, _} ->
-                raise "Bad local lookup for #{name}: index #{de_brujn_index} finds named #{other_name}"
+                raise LambdaError,
+                  message: "Bad local lookup for #{name}: index #{de_brujn_index} finds named #{other_name}"
 
               nil ->
-                raise "Bad local lookup for #{name}: out-of-bounds index #{de_brujn_index}"
+                raise LambdaError,
+                  message: "Bad local lookup for #{name}: out-of-bounds index #{de_brujn_index}"
             end
           end
       end

@@ -5,40 +5,27 @@ defmodule LambdaCalculus.Repl do
   end
 
   defp read(server, previous) do
-    did_read(server, previous, prompt!(previous == ""))
-  end
-
-  defp did_read(_server, <<>>, nil) do
-    nil
-  end
-
-  defp did_read(server, previous, nil) do
-    eval(server, previous, on_end_of_input: :give_up)
-  end
-
-  defp did_read(server, previous, <<>>) do
     case prompt!(previous == "") do
-      <<>> -> did_read(server, previous, nil)
-      line -> did_read(server, previous, line)
+      <<>> -> read(server, previous)
+      nil when previous !== "" -> eval(server, previous, on_end_of_input: :give_up)
+      nil -> nil
+      line -> eval(server, previous <> line <> " \n")
     end
-  end
-
-  defp did_read(server, previous, line) when is_binary(line) do
-    eval(server, previous <> line <> " \n")
   end
 
   defp eval(server, text, opts \\ []) do
     on_eof = Keyword.get(opts, :on_end_of_input, :read_more)
 
     case LambdaCalculus.EvalServer.eval(server, text) do
-      {:error, %Parsers.Error{unexpected: :end_of_input} = parser_error} ->
-        case on_eof do
-          :read_more -> read(server, text)
-          _ -> print(server, :error, Parsers.Error.message(parser_error))
-        end
+      {:error, %Parsers.Error{unexpected: :end_of_input}} when on_eof === :read_more ->
+        read(server, text)
 
       {:error, %Parsers.Error{} = parser_error} ->
         print(server, :error, Parsers.Error.message(parser_error))
+
+      # assume lists are chardata
+      {ok_or_error, value} when is_binary(value) or is_list(value) ->
+        print(server, ok_or_error, value)
 
       {ok_or_error, value} ->
         print(server, ok_or_error, inspect(value))
@@ -69,9 +56,17 @@ defmodule LambdaCalculus.Repl do
 
   defp get_line!() do
     case IO.read(:line) do
-      :eof -> nil
-      {:error, error} -> raise error
-      data -> String.trim(data)
+      {:error, error} ->
+        raise error
+
+      :eof ->
+        nil
+
+      data ->
+        case String.trim(data) do
+          ":q" -> nil
+          data -> data
+        end
     end
   end
 end

@@ -18,14 +18,21 @@ defmodule LambdaCalculus.MixProject do
             [:boundary]
           end,
           Mix.compilers()
-        ])
+        ]),
+      # here we define cli release
+      releases: [
+        cli: [
+          steps: [:assemble, &Bakeware.assemble/1]
+        ]
+      ]
     ]
   end
 
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      mod: {LambdaCalculus.Cli, []}
     ]
   end
 
@@ -39,6 +46,7 @@ defmodule LambdaCalculus.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:bakeware, "~> 0.2.4"},
       {:boundary, "~> 0.9", runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:typed_struct,
