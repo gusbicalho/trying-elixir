@@ -1,6 +1,11 @@
 defmodule LambdaCalculus.Repl do
+  alias LambdaCalculus.EvalServer
+  alias LambdaCalculus.Pipeline.Interpret.CompilationWarning
+  alias LambdaCalculus.Pipeline.ParseTree.Node
+  alias Parsers.Position
+
   def repl() do
-    {:ok, pid} = LambdaCalculus.EvalServer.start_link([])
+    {:ok, pid} = EvalServer.start_link([])
     read(pid, "")
   end
 
@@ -16,7 +21,7 @@ defmodule LambdaCalculus.Repl do
   defp eval(server, text, opts \\ []) do
     on_eof = Keyword.get(opts, :on_end_of_input, :read_more)
 
-    case LambdaCalculus.EvalServer.eval(server, text) do
+    case EvalServer.eval(server, text) do
       {:error, %Parsers.Error{unexpected: :end_of_input}} when on_eof === :read_more ->
         read(server, text)
 
@@ -24,21 +29,50 @@ defmodule LambdaCalculus.Repl do
         print(server, :error, Parsers.Error.message(parser_error))
 
       # assume lists are chardata
-      {ok_or_error, value} when is_binary(value) or is_list(value) ->
-        print(server, ok_or_error, value)
+      {:error, value} ->
+        print(
+          server,
+          :error,
+          if is_binary(value) or is_list(value) do
+            value
+          else
+            inspect(value)
+          end
+        )
 
-      {ok_or_error, value} ->
-        print(server, ok_or_error, inspect(value))
+      {:ok, value, warnings} ->
+        print(server, :ok, inspect(value), warnings)
     end
   end
 
-  defp print(server, :ok, value) do
-    IO.puts(value)
-    loop(server, "")
-  end
+  defp print(server, ok_or_error, value, warnings \\ []) do
+    Enum.each(warnings, fn %CompilationWarning{message: message, node: node} ->
+      IO.puts([
+        "WARNING: ",
+        message,
+        case node do
+          %Node{span: %Position.Span{start: %Position{line: line, column: column}}} ->
+            [
+              "\nat line ",
+              to_string(line),
+              ", column ",
+              to_string(column)
+            ]
 
-  defp print(server, :error, error) do
-    IO.puts(["ERROR: ", error])
+          _ ->
+            []
+        end
+      ])
+    end)
+
+    IO.puts([
+      case ok_or_error do
+        :ok -> []
+        :error -> "ERROR: "
+      end,
+      value
+    ])
+
     loop(server, "")
   end
 

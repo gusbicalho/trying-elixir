@@ -6,18 +6,44 @@ defmodule LambdaCalculus.Pipeline.Interpret do
 
   @type meta() :: [scope: Scope.scope(), parse_node: Node.t()]
 
+  defmodule CompilationContext do
+    use TypedStruct
+
+    typedstruct do
+      field :global_env, Runtime.global_env(), default: %{}
+      field :defining_global, atom()
+    end
+  end
+
+  defmodule CompilationWarning do
+    use TypedStruct
+
+    typedstruct do
+      field :message, iodata()
+      field :node, Node.t()
+    end
+
+    def new(message, node) do
+      %__MODULE__{message: message, node: node}
+    end
+  end
+
   @spec interpret_statement(Runtime.global_env(), AST.Statement.t(meta())) ::
-          {:ok, {Runtime.global_env(), Runtime.value()}} | {:error, any()}
+          {:ok, {Runtime.global_env(), Runtime.value(), [CompilationWarning.t()]}} | {:error, any()}
   def interpret_statement(%{} = global_env, %AST.Statement{} = stmt) do
     case stmt.statement do
-      %AST.Declaration{name: name, definition: expr} ->
-        with {:ok, term} <- interpret_expression(global_env, expr) do
-          {:ok, {Map.merge(global_env, %{name.name => term}), term}}
+      %AST.Declaration{name: %AST.Identifier{name: name}, definition: expr} ->
+        context = %CompilationContext{global_env: global_env, defining_global: name}
+
+        with {:ok, term, warnings} <- interpret_expression(context, expr) do
+          {:ok, {Map.merge(global_env, %{name => term}), term, warnings}}
         end
 
       %AST.Expression{} = expr ->
-        with {:ok, term} <- interpret_expression(global_env, expr) do
-          {:ok, {global_env, term}}
+        context = %CompilationContext{global_env: global_env}
+
+        with {:ok, term, warnings} <- interpret_expression(context, expr) do
+          {:ok, {global_env, term, warnings}}
         end
     end
   end
@@ -27,86 +53,99 @@ defmodule LambdaCalculus.Pipeline.Interpret do
   end
 
   @spec interpret_expression(
-          Runtime.global_env(),
+          CompilationContext.t(),
           AST.Expression.t(scope: :global | {:local, non_neg_integer()})
         ) ::
-          {:ok, Runtime.value()} | {:error, any()}
-  def interpret_expression(%{} = global_env, %AST.Expression{} = expr) do
-    with {:ok, compiled_expr} <- compile(expr) do
+          {:ok, Runtime.value(), [CompilationWarning.t()]} | {:error, any()}
+  def interpret_expression(%CompilationContext{} = context, %AST.Expression{} = expr) do
+    with {:ok, compiled_expr, warnings} <- compile(context, expr) do
       try do
-        {:ok, compiled_expr.(global_env, [])}
+        {:ok, compiled_expr.(context.global_env, []), warnings}
       rescue
         e in LambdaError -> {:error, e.message}
       end
     end
   end
 
-  @spec compile(any()) ::
-          {:ok, (Runtime.global_env(), Runtime.local_env() -> Runtime.value())}
+  @spec compile(CompilationContext.t(), any()) ::
+          {:ok, (Runtime.global_env(), Runtime.local_env() -> Runtime.value()), [CompilationWarning.t()]}
           | {:error, any()}
-  defp compile(%AST.Expression{expression: child}) do
-    compile(child)
+  defp compile(context, %AST.Expression{expression: child}) do
+    compile(context, child)
   end
 
-  defp compile(%AST.Lambda{parameter: parameter, body: body}) do
-    with {:ok, compiled_body} <- compile(body) do
+  defp compile(context, %AST.Lambda{parameter: parameter, body: body}) do
+    with {:ok, compiled_body, warnings_body} <- compile(context, body) do
       lambda = fn _, locals ->
         fn global_env, argument ->
           compiled_body.(global_env, [{parameter.name, argument} | locals])
         end
       end
 
-      {:ok, lambda}
+      {:ok, lambda, warnings_body}
     end
   end
 
-  defp compile(%AST.Application{function: function, argument: argument}) do
-    with {:ok, compiled_function} <- compile(function),
-         {:ok, compiled_argument} <- compile(argument) do
+  defp compile(context, %AST.Application{function: function, argument: argument}) do
+    with {:ok, compiled_function, warnings_function} <- compile(context, function),
+         {:ok, compiled_argument, warnings_argument} <- compile(context, argument) do
       apply = fn global_env, locals ->
         runtime_function = compiled_function.(global_env, locals)
         runtime_argument = compiled_argument.(global_env, locals)
         runtime_function.(global_env, runtime_argument)
       end
 
-      {:ok, apply}
+      {:ok, apply, warnings_function ++ warnings_argument}
     end
   end
 
-  defp compile(%AST.Lookup{lookup: %AST.Identifier{name: name}, meta: meta}) do
-    lookup =
-      case Keyword.fetch(meta, :scope) do
-        :error ->
-          raise LambdaError, message: "Bad local lookup for #{name}: no scope annotation"
+  defp compile(context, %AST.Lookup{lookup: %AST.Identifier{name: name}, meta: meta}) do
+    case Keyword.fetch(meta, :scope) do
+      :error ->
+        {:error, "Bad local lookup for #{name}: no scope annotation"}
 
-        {:ok, :global} ->
-          fn global_env, _ ->
-            Map.get_lazy(global_env, name, fn ->
-              raise LambdaError, message: "Undefined global #{name}"
-            end)
+      {:ok, :global} ->
+        lookup_global = fn global_env, _ ->
+          Map.get_lazy(global_env, name, fn ->
+            raise LambdaError, message: "Undefined global #{name}"
+          end)
+        end
+
+        warnings =
+          [
+            check_warning_undefined_global(context, name, Keyword.get(meta, :parse_node))
+          ]
+          |> Enum.filter(fn v -> v end)
+
+        {:ok, lookup_global, warnings}
+
+      {:ok, {:local, de_brujn_index}} ->
+        lookup_local = fn _, locals ->
+          case Enum.at(locals, de_brujn_index) do
+            {^name, value} ->
+              value
+
+            {other_name, _} ->
+              raise LambdaError,
+                message: "Bad local lookup for #{name}: index #{de_brujn_index} finds named #{other_name}"
+
+            nil ->
+              raise LambdaError,
+                message: "Bad local lookup for #{name}: out-of-bounds index #{de_brujn_index}"
           end
+        end
 
-        {:ok, {:local, de_brujn_index}} ->
-          fn _, locals ->
-            case Enum.at(locals, de_brujn_index) do
-              {^name, value} ->
-                value
-
-              {other_name, _} ->
-                raise LambdaError,
-                  message: "Bad local lookup for #{name}: index #{de_brujn_index} finds named #{other_name}"
-
-              nil ->
-                raise LambdaError,
-                  message: "Bad local lookup for #{name}: out-of-bounds index #{de_brujn_index}"
-            end
-          end
-      end
-
-    {:ok, lookup}
+        {:ok, lookup_local, []}
+    end
   end
 
-  defp compile(%AST.Literal{literal: value}) do
-    {:ok, fn _, _ -> value end}
+  defp compile(_context, %AST.Literal{literal: value}) do
+    {:ok, fn _, _ -> value end, []}
+  end
+
+  defp check_warning_undefined_global(%CompilationContext{} = context, name, parse_node) do
+    if Map.fetch(context.global_env, name) === :error && context.defining_global !== name do
+      CompilationWarning.new("Reference to undefined global #{name}", parse_node)
+    end
   end
 end

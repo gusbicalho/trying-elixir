@@ -30,8 +30,8 @@ defmodule LambdaCalculus.EvalServer do
             end),
          {:ok, stmt} <- Pipeline.ParseTreeToAST.Statement.parse(stmt),
          stmt = Pipeline.ASTAnalysis.Scope.analyze(stmt),
-         {:ok, {global_env, result}} <- Pipeline.Interpret.interpret_statement(global_env, stmt) do
-      {:reply, {:ok, result}, global_env}
+         {:ok, {global_env, result, warnings}} <- Pipeline.Interpret.interpret_statement(global_env, stmt) do
+      {:reply, {:ok, result, warnings}, global_env}
     else
       error -> {:reply, error, global_env}
     end
