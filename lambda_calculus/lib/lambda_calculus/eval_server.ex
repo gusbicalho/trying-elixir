@@ -14,7 +14,7 @@ defmodule LambdaCalculus.EvalServer do
   end
 
   def start_link(id) do
-    case GenServer.start_link(__MODULE__, nil, name: via_tuple(id)) do
+    case GenServer.start_link(__MODULE__, id, name: via_tuple(id)) do
       {:error, {:already_started, pid}} -> {:ok, pid}
       other -> other
     end
@@ -31,14 +31,15 @@ defmodule LambdaCalculus.EvalServer do
   # Server (callbacks)
 
   alias LambdaCalculus.Pipeline
+  alias LambdaCalculus.EvalState
 
   @impl true
-  def init(_) do
-    {:ok, %{plus: &plus/2, repeatedly: &repeatedly/2}}
+  def init(state_id) do
+    {:ok, state_id}
   end
 
   @impl true
-  def handle_call({:eval, text}, _from, global_env) do
+  def handle_call({:eval, text}, _from, state_id) do
     with {parse_result, leftovers} <- Pipeline.TextToParseTree.parse_stmt(text),
          {:ok, stmt} <- parse_result,
          nil <-
@@ -47,31 +48,15 @@ defmodule LambdaCalculus.EvalServer do
             end),
          {:ok, stmt} <- Pipeline.ParseTreeToAST.Statement.parse(stmt),
          stmt = Pipeline.ASTAnalysis.Scope.analyze(stmt),
-         {:ok, {global_env, result, warnings}} <- Pipeline.Interpret.interpret_statement(global_env, stmt) do
-      {:reply, {:ok, result, warnings}, global_env}
+         {:ok, {new_bindings, result, warnings}} <-
+           Pipeline.Interpret.interpret_statement(
+             EvalState.get_globals(state_id),
+             stmt
+           ) do
+      EvalState.define_globals(state_id, new_bindings)
+      {:reply, {:ok, result, warnings}, state_id}
     else
-      error -> {:reply, error, global_env}
+      error -> {:reply, error, state_id}
     end
-  end
-
-  # Native functions
-  def plus(_global_env, v1) do
-    fn _, v2 -> v1 + v2 end
-  end
-
-  def repeatedly(_global_env, num_times) do
-    fn _, f ->
-      fn global_env, arg ->
-        go_repeatedly(num_times, f, global_env, arg)
-      end
-    end
-  end
-
-  def go_repeatedly(times_left, f, global_env, arg) when is_integer(times_left) and times_left > 0 do
-    go_repeatedly(times_left - 1, f, global_env, f.(global_env, arg))
-  end
-
-  def go_repeatedly(_, _, _, arg) do
-    arg
   end
 end

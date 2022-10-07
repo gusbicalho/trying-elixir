@@ -19,6 +19,7 @@ defmodule LambdaCalculus.Cli do
     Supervisor.start_link(
       [
         ProcessRegistry,
+        {LambdaCalculus.EvalState, {server_id, LambdaCalculus.BuiltIns.built_ins()}},
         {EvalServer, server_id},
         {ReplServer, {repl_name, server_id}}
       ],

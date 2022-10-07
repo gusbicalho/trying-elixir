@@ -29,21 +29,21 @@ defmodule LambdaCalculus.Pipeline.Interpret do
   end
 
   @spec interpret_statement(Runtime.global_env(), AST.Statement.t(meta())) ::
-          {:ok, {Runtime.global_env(), Runtime.value(), [CompilationWarning.t()]}} | {:error, any()}
+          {:ok, {Keyword.t(Runtime.value()), Runtime.value(), [CompilationWarning.t()]}} | {:error, any()}
   def interpret_statement(%{} = global_env, %AST.Statement{} = stmt) do
     case stmt.statement do
       %AST.Declaration{name: %AST.Identifier{name: name}, definition: expr} ->
         context = %CompilationContext{global_env: global_env, defining_global: name}
 
         with {:ok, term, warnings} <- interpret_expression(context, expr) do
-          {:ok, {Map.merge(global_env, %{name => term}), term, warnings}}
+          {:ok, {[{name, term}], term, warnings}}
         end
 
       %AST.Expression{} = expr ->
         context = %CompilationContext{global_env: global_env}
 
         with {:ok, term, warnings} <- interpret_expression(context, expr) do
-          {:ok, {global_env, term, warnings}}
+          {:ok, {[], term, warnings}}
         end
     end
   end
