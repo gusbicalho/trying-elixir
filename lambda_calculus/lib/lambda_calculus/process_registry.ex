@@ -1,6 +1,9 @@
 defmodule LambdaCalculus.ProcessRegistry do
   def start_link() do
-    Registry.start_link(keys: :unique, name: __MODULE__)
+    case Registry.start_link(keys: :unique, name: __MODULE__) do
+      {:error, {:already_started, pid}} -> {:ok, pid}
+      other -> other
+    end
   end
 
   def child_spec(_) do

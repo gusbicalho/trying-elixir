@@ -3,16 +3,21 @@ defmodule LambdaCalculus.EvalServer do
 
   # Client
 
+  def eval(id, text) do
+    GenServer.call(via_tuple(id), {:eval, text})
+  end
+
+  # Process
+
   def start_link() do
     GenServer.start_link(__MODULE__, nil)
   end
 
   def start_link(id) do
-    GenServer.start_link(__MODULE__, nil, name: via_tuple(id))
-  end
-
-  def eval(id, text) do
-    GenServer.call(via_tuple(id), {:eval, text})
+    case GenServer.start_link(__MODULE__, nil, name: via_tuple(id)) do
+      {:error, {:already_started, pid}} -> {:ok, pid}
+      other -> other
+    end
   end
 
   defp via_tuple(id) when is_pid(id) do
