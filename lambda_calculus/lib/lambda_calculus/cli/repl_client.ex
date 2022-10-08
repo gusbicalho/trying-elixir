@@ -17,7 +17,7 @@ defmodule LambdaCalculus.Cli.ReplClient do
   end
 
   def interact(client_name, server_name) do
-    Task.Supervisor.async(via_tuple(client_name), fn ->
+    Task.Supervisor.async_nolink(via_tuple(client_name), fn ->
       do_while_truthy(fn ->
         IO.write(ReplServer.prompt(server_name))
 
@@ -56,6 +56,7 @@ defmodule LambdaCalculus.Cli.ReplClient do
       data ->
         case String.trim(data) do
           ":q" -> nil
+          ":!" -> raise "!!!"
           data -> data
         end
     end
