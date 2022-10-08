@@ -2,10 +2,7 @@ defmodule LambdaCalculus.EvalState do
   use Agent
 
   def start_link({id, built_ins}) do
-    case Agent.start_link(fn -> %{globals: built_ins} end, name: via_tuple(id)) do
-      {:error, {:already_started, pid}} -> {:ok, pid}
-      other -> other
-    end
+    Agent.start_link(fn -> %{globals: built_ins} end, name: via_tuple(id))
   end
 
   defp via_tuple(id) do

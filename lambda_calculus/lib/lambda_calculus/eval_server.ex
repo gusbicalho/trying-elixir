@@ -14,10 +14,7 @@ defmodule LambdaCalculus.EvalServer do
   end
 
   def start_link(id) do
-    case GenServer.start_link(__MODULE__, id, name: via_tuple(id)) do
-      {:error, {:already_started, pid}} -> {:ok, pid}
-      other -> other
-    end
+    GenServer.start_link(__MODULE__, id, name: via_tuple(id))
   end
 
   defp via_tuple(id) when is_pid(id) do

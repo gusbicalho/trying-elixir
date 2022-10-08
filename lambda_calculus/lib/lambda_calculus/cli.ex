@@ -2,51 +2,45 @@ defmodule LambdaCalculus.Cli do
   alias LambdaCalculus.EvalServer
   alias LambdaCalculus.ProcessRegistry
   alias LambdaCalculus.ReplServer
+  alias LambdaCalculus.Cli.ReplClient
 
   use Bakeware.Script
 
   def main(_ \\ nil) do
-    start_link()
-    interact()
+    repl = :default_repl
+
+    {:ok, _} = start_link(repl) |> reuse_existing()
+
+    ReplClient.interact(
+      repl_client(repl),
+      repl_server(repl)
+    )
+
     :ok
   end
 
-  @default_repl :repl
-
-  def start_link(repl_name \\ @default_repl) do
-    server_id = String.to_atom(to_string(repl_name) <> ".EvalServer")
+  def start_link(repl) do
+    eval_server = eval_server(repl)
+    repl_client = repl_client(repl)
 
     Supervisor.start_link(
       [
         ProcessRegistry,
-        {LambdaCalculus.EvalState, {server_id, LambdaCalculus.BuiltIns.built_ins()}},
-        {EvalServer, server_id},
-        {ReplServer, {repl_name, server_id}}
+        {LambdaCalculus.EvalState, {eval_server, LambdaCalculus.BuiltIns.built_ins()}},
+        {EvalServer, eval_server},
+        {ReplServer, {repl_server(repl), eval_server}},
+        {ReplClient, repl_client}
       ],
-      strategy: :one_for_one
+      strategy: :one_for_one,
+      name: {:global, {__MODULE__, repl}}
     )
   end
 
-  def interact(repl_name \\ @default_repl) do
-    ReplServer.interact(repl_name, %{
-      write: &IO.write/1,
-      get_line: &get_line!/0
-    })
-  end
+  def eval_server(repl), do: {__MODULE__, repl, :eval}
+  def repl_server(repl), do: {__MODULE__, repl, :repl_server}
+  def repl_client(repl), do: {__MODULE__, repl, :repl}
 
-  defp get_line!() do
-    case IO.read(:line) do
-      {:error, error} ->
-        raise error
-
-      :eof ->
-        nil
-
-      data ->
-        case String.trim(data) do
-          ":q" -> nil
-          data -> data
-        end
-    end
-  end
+  def reuse_existing({:ok, _} = ok), do: ok
+  def reuse_existing({:error, {:already_started, pid}}), do: {:ok, pid}
+  def reuse_existing({:error, _} = error), do: error
 end

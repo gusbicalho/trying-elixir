@@ -1,5 +1,5 @@
 defmodule LambdaCalculus.ReplServer do
-  use GenServer, restart: :transient
+  use GenServer
 
   # Client
 
