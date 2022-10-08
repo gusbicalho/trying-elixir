@@ -90,7 +90,7 @@ defmodule LambdaCalculus.Pipeline.ParseTreeToAST do
         {:ok,
          %AST.Expression{
            application_expr
-           | meta: Meta.meta_from(expr_node)
+           | meta: Meta.meta_from(expr_node),
          }}
       end
     end

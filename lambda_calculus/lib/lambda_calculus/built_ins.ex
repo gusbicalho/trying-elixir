@@ -2,7 +2,7 @@ defmodule LambdaCalculus.BuiltIns do
   def built_ins() do
     %{
       plus: &plus/2,
-      repeatedly: &repeatedly/2
+      repeatedly: &repeatedly/2,
     }
   end
 

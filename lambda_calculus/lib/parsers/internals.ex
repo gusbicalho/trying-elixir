@@ -16,7 +16,7 @@ defmodule Parsers.Internals do
         leftovers: text,
         consumed_so_far: 0,
         position: Position.new(0, 0),
-        source_name: opts[:source_name]
+        source_name: opts[:source_name],
       }
     end
 
@@ -48,8 +48,8 @@ defmodule Parsers.Internals do
           consumed_so_far: state.consumed_so_far + String.length(consumed),
           position: %Position{
             line: current_line,
-            column: current_col
-          }
+            column: current_col,
+          },
       }
     end
   end

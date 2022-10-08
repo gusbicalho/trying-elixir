@@ -14,7 +14,7 @@ defmodule Parsers do
       Numbers,
       Position,
       Position.Span,
-      String
+      String,
     ]
 
   alias Parsers.Error

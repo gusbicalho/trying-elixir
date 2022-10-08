@@ -12,7 +12,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
   def stmt_parser do
     P.alternatives([
       decl_parser(),
-      expr_parser()
+      expr_parser(),
     ])
     |> as_single_child_of(:stmt)
     |> P.also(P.Delimiter.whitespace())
@@ -31,7 +31,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
       %PTree.Node{
         type: :decl,
         markers: [equals],
-        children: [identifier, definition]
+        children: [identifier, definition],
       }
     end)
     |> spanned_node()
@@ -47,7 +47,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
     |> P.then(
       P.alternatives([
         lambda_parser(),
-        application_parser()
+        application_parser(),
       ])
     )
     |> as_single_child_of(:expr)
@@ -66,7 +66,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
       %PTree.Node{
         type: :lambda,
         markers: [backslash, arrow],
-        children: [param_id, body_expr]
+        children: [param_id, body_expr],
       }
     end)
     |> spanned_node()
@@ -110,7 +110,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
         type: :application,
         markers: [],
         children: [app_head, app_args],
-        span: span
+        span: span,
       }
     end)
   end
@@ -121,7 +121,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
       P.alternatives([
         parens(expr_parser()),
         identifier_parser(),
-        literal_integer_parser()
+        literal_integer_parser(),
       ])
     )
   end
@@ -136,7 +136,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
       %PTree.Node{
         type: :parens,
         markers: [open_paren, close_paren],
-        children: [item]
+        children: [item],
       }
     end)
     |> spanned_node()
@@ -190,14 +190,14 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
         %PTree.Node{
           type: type,
           markers: [name],
-          children: []
+          children: [],
         }
 
       name when is_binary(name) ->
         %PTree.Node{
           type: type,
           markers: [String.to_atom(name)],
-          children: []
+          children: [],
         }
     end)
     |> spanned_node()
@@ -209,7 +209,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
       %PTree.Node{
         type: parent_type,
         children: [child],
-        markers: []
+        markers: [],
       }
     end)
     |> spanned_node()
@@ -221,7 +221,7 @@ defmodule LambdaCalculus.Pipeline.TextToParseTree do
     |> P.map(fn {node, span} ->
       %PTree.Node{
         node
-        | span: span
+        | span: span,
       }
     end)
   end

@@ -115,12 +115,12 @@ defmodule LambdaCalculus.ReplServer do
                 "\nat line ",
                 to_string(line),
                 ", column ",
-                to_string(column)
+                to_string(column),
               ]
 
             _ ->
               []
-          end
+          end,
         ]
       end),
       [
@@ -128,8 +128,8 @@ defmodule LambdaCalculus.ReplServer do
           :ok -> []
           :error -> "ERROR: "
         end,
-        value
-      ]
+        value,
+      ],
     ]
   end
 end

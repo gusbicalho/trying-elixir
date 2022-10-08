@@ -10,7 +10,7 @@ defmodule Parsers.Error do
     def whitespace() do
       %__MODULE__{
         completions: [" "],
-        description: "whitespace"
+        description: "whitespace",
       }
     end
   end
@@ -32,7 +32,7 @@ defmodule Parsers.Error do
       unexpected: e2.unexpected || e1.unexpected,
       expected: Enum.uniq(e1.expected ++ e2.expected),
       message: e2.message || e1.message,
-      meta: e1.meta ++ e2.meta
+      meta: e1.meta ++ e2.meta,
     }
   end
 
@@ -59,13 +59,13 @@ defmodule Parsers.Error do
   def expected(expected, but_found) when is_list(expected) do
     %__MODULE__{
       expected: expected,
-      unexpected: but_found
+      unexpected: but_found,
     }
   end
 
   def unexpected(but_found) do
     %__MODULE__{
-      unexpected: but_found
+      unexpected: but_found,
     }
   end
 
@@ -94,7 +94,7 @@ defmodule Parsers.Error do
       if is_list(expected) do
         [
           "one of: ",
-          expected |> Enum.map(&describe_expected/1) |> Enum.intersperse(", ")
+          expected |> Enum.map(&describe_expected/1) |> Enum.intersperse(", "),
         ]
       else
         describe_expected(expected)
@@ -103,7 +103,7 @@ defmodule Parsers.Error do
         nil -> "."
         :end_of_input -> ["; but reached end of input."]
         but_found -> ["; but found ", but_found]
-      end
+      end,
     ]
   end
 

@@ -10,7 +10,7 @@ defmodule Parsers.Grapheme do
       nil ->
         {state,
          Error.expected(%Error.Expected{
-           description: "any grapheme"
+           description: "any grapheme",
          })}
 
       grapheme ->

@@ -113,7 +113,7 @@ defmodule LambdaCalculus.Pipeline.Interpret do
 
         warnings =
           [
-            check_warning_undefined_global(context, name, Keyword.get(meta, :parse_node))
+            check_warning_undefined_global(context, name, Keyword.get(meta, :parse_node)),
           ]
           |> Enum.filter(fn v -> v end)
 

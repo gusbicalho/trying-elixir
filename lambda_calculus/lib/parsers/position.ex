@@ -30,7 +30,7 @@ defmodule Parsers.Position do
       %__MODULE__{
         start: min(this_start, that_start),
         end: max(this_end, that_end),
-        source_name: source_name
+        source_name: source_name,
       }
     end
   end

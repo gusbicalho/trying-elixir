@@ -8,7 +8,7 @@ defmodule LambdaCalculus.Cli.ReplClient do
   def child_spec(name) do
     %{
       id: via_tuple(name),
-      start: {__MODULE__, :start_link, [via_tuple(name)]}
+      start: {__MODULE__, :start_link, [via_tuple(name)]},
     }
   end
 

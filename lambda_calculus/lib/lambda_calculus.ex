@@ -35,26 +35,26 @@ defmodule LambdaCalculus do
                   function: %AST.Expression{
                     expression: %AST.Lookup{
                       lookup: %AST.Identifier{name: :plus},
-                      meta: [{:scope, :global} | _]
-                    }
+                      meta: [{:scope, :global} | _],
+                    },
                   },
                   argument: %AST.Expression{
                     expression: %AST.Lookup{
                       lookup: %AST.Identifier{name: :q},
-                      meta: [{:scope, {:local, 0}} | _]
-                    }
-                  }
-                }
+                      meta: [{:scope, {:local, 0}} | _],
+                    },
+                  },
+                },
               },
               argument: %AST.Expression{
                 expression: %AST.Literal{
-                  literal: 1
-                }
-              }
-            }
-          }
-        }
-      }
+                  literal: 1,
+                },
+              },
+            },
+          },
+        },
+      },
     } = test_parse_stmt("\\ q -> plus q 1      ")
 
     %AST.Statement{
@@ -66,12 +66,12 @@ defmodule LambdaCalculus do
             body: %AST.Expression{
               expression: %AST.Lookup{
                 lookup: %AST.Identifier{name: :a},
-                meta: [{:scope, {:local, 0}} | _]
-              }
-            }
-          }
-        }
-      }
+                meta: [{:scope, {:local, 0}} | _],
+              },
+            },
+          },
+        },
+      },
     } = test_parse_stmt("id = \\a -> a              ", "second.lam")
 
     nil

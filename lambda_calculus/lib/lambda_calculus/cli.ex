@@ -1,4 +1,5 @@
 defmodule LambdaCalculus.Cli do
+  alias LambdaCalculus.EvalState
   alias LambdaCalculus.EvalServer
   alias LambdaCalculus.ProcessRegistry
   alias LambdaCalculus.ReplServer
@@ -26,10 +27,10 @@ defmodule LambdaCalculus.Cli do
     Supervisor.start_link(
       [
         ProcessRegistry,
-        {LambdaCalculus.EvalState, {eval_server, LambdaCalculus.BuiltIns.built_ins()}},
+        {EvalState, {eval_server, LambdaCalculus.BuiltIns.built_ins()}},
         {EvalServer, eval_server},
         {ReplServer, {repl_server(repl), eval_server}},
-        {ReplClient, repl_client}
+        {ReplClient, repl_client},
       ],
       strategy: :one_for_one,
       name: {:global, {__MODULE__, repl}}

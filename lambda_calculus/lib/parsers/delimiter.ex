@@ -17,7 +17,7 @@ defmodule Parsers.Delimiter do
           Error.unexpected(grapheme)
           |> Error.with_message([
             "Expected end of input, but found ",
-            grapheme
+            grapheme,
           ])}}
     end
   end

@@ -17,14 +17,14 @@ defmodule LambdaCalculus.MixProject do
           if !System.get_env("ELS_MODE") do
             [:boundary]
           end,
-          Mix.compilers()
+          Mix.compilers(),
         ]),
       # here we define cli release
       releases: [
         cli: [
-          steps: [:assemble, &Bakeware.assemble/1]
-        ]
-      ]
+          steps: [:assemble, &Bakeware.assemble/1],
+        ],
+      ],
     ]
   end
 
@@ -32,7 +32,7 @@ defmodule LambdaCalculus.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {LambdaCalculus.Cli, []}
+      mod: {LambdaCalculus.Cli, []},
     ]
   end
 
@@ -49,8 +49,9 @@ defmodule LambdaCalculus.MixProject do
       {:bakeware, "~> 0.2.4"},
       {:boundary, "~> 0.9", runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:freedom_formatter, ">= 2.0.0", runtime: false},
       {:typed_struct,
-       git: "https://github.com/gusbicalho/typed_struct.git", ref: "a1e60cd9e66c07b168b8d457d65ae211cef4f0e5"}
+       git: "https://github.com/gusbicalho/typed_struct.git", ref: "a1e60cd9e66c07b168b8d457d65ae211cef4f0e5"},
     ]
   end
 end
