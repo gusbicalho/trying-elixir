@@ -8,12 +8,11 @@ defmodule LambdaCalculus.Repl do
 
   alias LambdaCalculus.ProcessRegistry
   alias LambdaCalculus.Repl.Server
-  alias LambdaCalculus.Repl.TaskSupervisor
   alias LambdaCalculus.Repl.Client
 
   def start_link(%{
         name: name,
-        interpreter: eval_server,
+        interpreter: interpreter,
       }) do
     task_supervisor = task_supervisor(name)
     repl_client = repl_client(name)
@@ -21,13 +20,17 @@ defmodule LambdaCalculus.Repl do
 
     Supervisor.start_link(
       [
-        {TaskSupervisor, task_supervisor},
-        {Server, {repl_server, eval_server}},
+        {Task.Supervisor, name: task_supervisor},
+        {Server,
+         %{
+           name: repl_server,
+           interpreter: interpreter,
+         }},
         {Client,
          %{
            name: repl_client,
            server: repl_server,
-           task_supervisor: TaskSupervisor.via(task_supervisor),
+           task_supervisor: task_supervisor,
          }},
       ],
       strategy: :one_for_one,
@@ -43,7 +46,7 @@ defmodule LambdaCalculus.Repl do
     }
   end
 
-  defp task_supervisor(name), do: {__MODULE__, name, :repl_server}
+  defp task_supervisor(name), do: ProcessRegistry.via({__MODULE__, name, :repl_server})
   defp repl_server(name), do: {__MODULE__, name, :repl_server}
   defp repl_client(name), do: {__MODULE__, name, :repl}
 

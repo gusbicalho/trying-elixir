@@ -13,8 +13,11 @@ defmodule LambdaCalculus.Repl.Server do
 
   # Process
 
-  def start_link({id, eval_server_name}) do
-    GenServer.start_link(__MODULE__, eval_server_name, name: via_tuple(id))
+  def start_link(%{
+        name: id,
+        interpreter: interpreter,
+      }) do
+    GenServer.start_link(__MODULE__, interpreter, name: via_tuple(id))
   end
 
   defp via_tuple(id) when is_pid(id) do
@@ -33,8 +36,8 @@ defmodule LambdaCalculus.Repl.Server do
   alias Parsers.Position
 
   @impl true
-  def init(eval_server_name) do
-    {:ok, %{eval_server: eval_server_name, input: ""}}
+  def init(interpreter) do
+    {:ok, %{interpreter: interpreter, input: ""}}
   end
 
   @impl true
@@ -59,11 +62,11 @@ defmodule LambdaCalculus.Repl.Server do
     end
   end
 
-  defp eval(%{eval_server: server} = state, text, opts \\ []) do
+  defp eval(%{interpreter: interpreter} = state, text, opts \\ []) do
     on_eof = Keyword.get(opts, :on_end_of_input, :read_more)
 
     {message, input_state} =
-      case Interpreter.eval(server, text) do
+      case Interpreter.eval(interpreter, text) do
         {:error, %Parsers.Error{unexpected: :end_of_input}} when on_eof === :read_more ->
           {"", text}
 
