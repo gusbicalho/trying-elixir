@@ -2,14 +2,14 @@ defmodule LambdaCalculus.ProcessRegistry do
   use Boundary
 
   def start_link() do
-    Registry.start_link(keys: :unique, name: __MODULE__)
+    %{start: {registry, function, args}} = child_spec(nil)
+    apply(registry, function, args)
   end
 
   def child_spec(_) do
     Supervisor.child_spec(
-      Registry,
-      id: __MODULE__,
-      start: {__MODULE__, :start_link, []}
+      {Registry, [keys: :unique, name: __MODULE__]},
+      []
     )
   end
 
