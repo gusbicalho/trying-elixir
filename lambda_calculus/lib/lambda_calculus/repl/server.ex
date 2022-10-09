@@ -11,24 +11,6 @@ defmodule LambdaCalculus.Repl.Server do
     GenServer.call(via_tuple(id), {:read_line, line})
   end
 
-  def interact(id, %{write: write, get_line: get_line}) do
-    do_while_truthy(fn ->
-      write.(prompt(id))
-
-      case get_line.() |> read_line(id) do
-        nil -> nil
-        "" -> :ok
-        string -> write.([string, "\n"])
-      end
-    end)
-  end
-
-  defp do_while_truthy(f) do
-    if f.() do
-      do_while_truthy(f)
-    end
-  end
-
   # Process
 
   def start_link({id, eval_server_name}) do
