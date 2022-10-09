@@ -1,45 +1,43 @@
 defmodule LambdaCalculus.Cli do
-  alias LambdaCalculus.EvalState
-  alias LambdaCalculus.EvalServer
+  alias LambdaCalculus.Interpreter
   alias LambdaCalculus.ProcessRegistry
-  alias LambdaCalculus.ReplServer
-  alias LambdaCalculus.Cli.ReplClient
+  alias LambdaCalculus.Repl
 
-  use Bakeware.Script
+  def main(_args \\ nil) do
+    name = :default_repl
 
-  def main(_ \\ nil) do
-    repl = :default_repl
+    {:ok, _} = start_link(name) |> reuse_existing()
 
-    {:ok, _} = start_link(repl) |> reuse_existing()
-
-    ReplClient.interact(
-      repl_client(repl),
-      repl_server(repl)
-    )
+    Repl.interact(repl(name))
 
     :ok
   end
 
-  def start_link(repl) do
-    eval_server = eval_server(repl)
-    repl_client = repl_client(repl)
+  def start_link(name) do
+    interpreter = interpreter(name)
 
     Supervisor.start_link(
       [
         ProcessRegistry,
-        {EvalState, {eval_server, LambdaCalculus.BuiltIns.built_ins()}},
-        {EvalServer, eval_server},
-        {ReplServer, {repl_server(repl), eval_server}},
-        {ReplClient, repl_client},
+        {Interpreter,
+         %{
+           name: interpreter,
+           built_ins: LambdaCalculus.BuiltIns.built_ins(),
+         }},
+        {Repl,
+         %{
+           name: repl(name),
+           interpreter: interpreter,
+         }},
       ],
       strategy: :one_for_one,
-      name: {:global, {__MODULE__, repl}}
+      name: via(name)
     )
   end
 
-  def eval_server(repl), do: {__MODULE__, repl, :eval}
-  def repl_server(repl), do: {__MODULE__, repl, :repl_server}
-  def repl_client(repl), do: {__MODULE__, repl, :repl}
+  def via(name), do: {:global, {__MODULE__, name}}
+  def interpreter(name), do: {__MODULE__, name, :eval}
+  def repl(name), do: {__MODULE__, name, :repl}
 
   def reuse_existing({:ok, _} = ok), do: ok
   def reuse_existing({:error, {:already_started, pid}}), do: {:ok, pid}

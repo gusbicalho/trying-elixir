@@ -1,4 +1,4 @@
-defmodule LambdaCalculus.EvalState do
+defmodule LambdaCalculus.Interpreter.State do
   use Agent
 
   def start_link({id, built_ins}) do

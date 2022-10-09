@@ -1,4 +1,4 @@
-defmodule LambdaCalculus.EvalServer do
+defmodule LambdaCalculus.Interpreter.EvalServer do
   use GenServer
 
   # Client
@@ -28,7 +28,7 @@ defmodule LambdaCalculus.EvalServer do
   # Server (callbacks)
 
   alias LambdaCalculus.Pipeline
-  alias LambdaCalculus.EvalState
+  alias LambdaCalculus.Interpreter.State
 
   @impl true
   def init(state_id) do
@@ -47,10 +47,10 @@ defmodule LambdaCalculus.EvalServer do
          stmt = Pipeline.ASTAnalysis.Scope.analyze(stmt),
          {:ok, {new_bindings, result, warnings}} <-
            Pipeline.Interpret.interpret_statement(
-             EvalState.get_globals(state_id),
+             State.get_globals(state_id),
              stmt
            ) do
-      EvalState.define_globals(state_id, new_bindings)
+      State.define_globals(state_id, new_bindings)
       {:reply, {:ok, result, warnings}, state_id}
     else
       error -> {:reply, error, state_id}

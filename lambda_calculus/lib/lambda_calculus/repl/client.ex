@@ -1,5 +1,5 @@
-defmodule LambdaCalculus.Cli.ReplClient do
-  alias LambdaCalculus.ReplServer
+defmodule LambdaCalculus.Repl.Client do
+  alias LambdaCalculus.Repl.Server
 
   def start_link(name) do
     Task.Supervisor.start_link(name: name)
@@ -19,9 +19,9 @@ defmodule LambdaCalculus.Cli.ReplClient do
   def interact(client_name, server_name) do
     Task.Supervisor.async_nolink(via_tuple(client_name), fn ->
       do_while_truthy(fn ->
-        IO.write(ReplServer.prompt(server_name))
+        IO.write(Server.prompt(server_name))
 
-        case get_line!() |> ReplServer.read_line(server_name) do
+        case get_line!() |> Server.read_line(server_name) do
           nil -> nil
           "" -> :ok
           string -> IO.write([string, "\n"])

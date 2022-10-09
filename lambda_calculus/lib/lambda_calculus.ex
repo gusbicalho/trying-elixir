@@ -78,9 +78,15 @@ defmodule LambdaCalculus do
   end
 
   def test_eval_server() do
-    alias LambdaCalculus.EvalServer
-    {:ok, pid} = EvalServer.start_link([])
-    eval = fn s -> EvalServer.eval(pid, s) end
+    alias LambdaCalculus.Interpreter
+
+    {:ok, pid} =
+      Interpreter.start_link(%{
+        name: {__MODULE__, :test_eval_server},
+        built_ins: LambdaCalculus.BuiltIns.built_ins(),
+      })
+
+    eval = fn s -> Interpreter.eval(pid, s) end
 
     {:ok, 5, _} = eval.("plus 2 3")
     {:ok, 5, _} = eval.("five = plus 2 3")
@@ -103,6 +109,8 @@ defmodule LambdaCalculus do
     # the global scope is dynamic!
     {:ok, _, _} = eval.("times = plus")
     {:ok, 13, _} = eval.("product somelist")
+
+    Process.exit(pid, :kill)
 
     :ok
   end

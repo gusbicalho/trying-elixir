@@ -1,4 +1,4 @@
-defmodule LambdaCalculus.ReplServer do
+defmodule LambdaCalculus.Repl.Server do
   use GenServer
 
   # Client
@@ -45,7 +45,7 @@ defmodule LambdaCalculus.ReplServer do
 
   # Server (callbacks)
 
-  alias LambdaCalculus.EvalServer
+  alias LambdaCalculus.Interpreter
   alias LambdaCalculus.Pipeline.Interpret.CompilationWarning
   alias LambdaCalculus.Pipeline.ParseTree.Node
   alias Parsers.Position
@@ -81,7 +81,7 @@ defmodule LambdaCalculus.ReplServer do
     on_eof = Keyword.get(opts, :on_end_of_input, :read_more)
 
     {message, input_state} =
-      case EvalServer.eval(server, text) do
+      case Interpreter.eval(server, text) do
         {:error, %Parsers.Error{unexpected: :end_of_input}} when on_eof === :read_more ->
           {"", text}
 
