@@ -8,17 +8,6 @@ defmodule LambdaCalculus.MixProject do
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      compilers:
-        concat_all([
-          # Workaround to avoid Boundary breaking ElixirLS:
-          # ElixirLS runs with the ELS_MODE env var set, so we disable the
-          # Boundary compiler in that case.
-          # See https://github.com/elixir-lsp/elixir-ls/issues/717
-          if !System.get_env("ELS_MODE") do
-            [:boundary]
-          end,
-          Mix.compilers(),
-        ]),
       escript: [main_module: LambdaCalculus.Cli],
     ]
   end
@@ -40,7 +29,7 @@ defmodule LambdaCalculus.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:boundary, "~> 0.9", runtime: false},
+      {:boundary, "~> 0.9.4", runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:freedom_formatter, ">= 2.0.0", runtime: false},
       {:typed_struct,
