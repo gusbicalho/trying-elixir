@@ -9,6 +9,10 @@ defmodule LambdaCalculus.Repl.Client do
     GenServer.call(via_tuple(name), :interact, :infinity)
   end
 
+  def interact_directly(repl_server) do
+    do_interact(repl_server)
+  end
+
   # Process
 
   def start_link(%{

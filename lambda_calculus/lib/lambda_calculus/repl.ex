@@ -57,4 +57,13 @@ defmodule LambdaCalculus.Repl do
   def interact(name) do
     Client.interact(repl_client(name))
   end
+
+  @doc """
+  Runs a REPL interactive loop in the console, in the calling
+  process. Errors will be raised directly in the calling process.
+  Useful for environments that mess with stdio, such as IEx.
+  """
+  def interact_directly(name) do
+    Client.interact_directly(repl_server(name))
+  end
 end

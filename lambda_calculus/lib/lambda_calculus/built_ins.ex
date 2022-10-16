@@ -1,4 +1,6 @@
 defmodule LambdaCalculus.BuiltIns do
+  use Boundary
+
   def built_ins() do
     %{
       plus: &plus/2,

@@ -4,8 +4,7 @@ defmodule LambdaCalculus do
   """
 
   use Boundary,
-    deps: [Parsers],
-    exports: [Cli]
+    deps: [Parsers]
 
   alias LambdaCalculus.Pipeline.AST
 
